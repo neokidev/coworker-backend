@@ -16,4 +16,7 @@ migratedown:
 migrateforce:
 	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/zeal_dev?sslmode=disable" force 1
 
-.PHONY: postgres createdb dropdb migrateup migratedown migrateforce
+sqlc:
+	sqlc generate
+
+.PHONY: postgres createdb dropdb migrateup migratedown migrateforce sqlc
