@@ -3,7 +3,7 @@ package api
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	db "github.com/ot07/management-app-demo-backend/db/sqlc"
+	db "github.com/ot07/coworker-backend/db/sqlc"
 )
 
 type createMemberRequest struct {
