@@ -22,14 +22,14 @@ type memberResponse struct {
 	CreatedAt db.NullTime       `json:"created_at"`
 }
 
-func newMemberResponse(user db.Member) memberResponse {
+func newMemberResponse(member db.Member) memberResponse {
 	return memberResponse{
-		ID:        user.ID,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Email:     db.NullString{NullString: user.Email},
-		Status:    user.Status,
-		CreatedAt: db.NullTime{NullTime: user.CreatedAt},
+		ID:        member.ID,
+		FirstName: member.FirstName,
+		LastName:  member.LastName,
+		Email:     db.NullString{NullString: member.Email},
+		Status:    member.Status,
+		CreatedAt: db.NullTime{NullTime: member.CreatedAt},
 	}
 }
 
@@ -57,5 +57,69 @@ func (server *Server) createMember(c *fiber.Ctx) error {
 	}
 
 	rsp := newMemberResponse(member)
+	return c.Status(fiber.StatusOK).JSON(rsp)
+}
+
+type getMemberRequest struct {
+	ID uuid.UUID `json:"id" validate:"required"`
+}
+
+func (server *Server) getMember(c *fiber.Ctx) error {
+	req := new(getMemberRequest)
+
+	if err := c.ParamsParser(req); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(errorResponse(err))
+	}
+
+	if err := validate.Struct(req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(errorResponse(err))
+	}
+
+	member, err := server.store.GetMember(c.Context(), req.ID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(errorResponse(err))
+	}
+
+	rsp := newMemberResponse(member)
+	return c.Status(fiber.StatusOK).JSON(rsp)
+}
+
+type listMembersRequest struct {
+	PageID   int32 `query:"page_id" validate:"required,min=1"`
+	PageSize int32 `query:"page_size" validate:"required,min=5,max=10"`
+}
+
+type membersResponse []memberResponse
+
+func newMembersResponse(members []db.Member) membersResponse {
+	var rsp []memberResponse
+	for _, member := range members {
+		rsp = append(rsp, newMemberResponse(member))
+	}
+	return rsp
+}
+
+func (server *Server) listMembers(c *fiber.Ctx) error {
+	req := new(listMembersRequest)
+
+	if err := c.QueryParser(req); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(errorResponse(err))
+	}
+
+	if err := validate.Struct(req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(errorResponse(err))
+	}
+
+	arg := db.ListMembersParams{
+		Limit:  req.PageSize,
+		Offset: (req.PageID - 1) * req.PageSize,
+	}
+
+	members, err := server.store.ListMembers(c.Context(), arg)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(errorResponse(err))
+	}
+
+	rsp := newMembersResponse(members)
 	return c.Status(fiber.StatusOK).JSON(rsp)
 }

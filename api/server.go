@@ -20,6 +20,8 @@ func NewServer(store *db.Store) *Server {
 	server := &Server{store: store, app: app}
 
 	app.Post("/members", server.createMember)
+	app.Get("/members/:id", server.getMember)
+	app.Get("/members", server.listMembers)
 
 	return server
 }
