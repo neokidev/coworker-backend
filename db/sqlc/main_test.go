@@ -2,7 +2,7 @@ package db
 
 import (
 	"database/sql"
-	"github.com/ot07/management-app-demo-backend/util"
+	"github.com/ot07/coworker-backend/util"
 	"log"
 	"os"
 	"testing"

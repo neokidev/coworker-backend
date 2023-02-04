@@ -2,9 +2,9 @@ package main
 
 import (
 	"database/sql"
-	"github.com/ot07/management-app-demo-backend/api"
-	db "github.com/ot07/management-app-demo-backend/db/sqlc"
-	"github.com/ot07/management-app-demo-backend/util"
+	"github.com/ot07/coworker-backend/api"
+	db "github.com/ot07/coworker-backend/db/sqlc"
+	"github.com/ot07/coworker-backend/util"
 	"log"
 
 	_ "github.com/lib/pq"

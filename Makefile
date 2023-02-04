@@ -1,20 +1,20 @@
 postgres:
-	docker run --name management-app-demo-db -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:15-alpine
+	docker run --name coworker-db -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:15-alpine
 
 createdb:
-	docker exec -it management-app-demo-db createdb --username=root --owner=root zeal_dev
+	docker exec -it coworker-db createdb --username=root --owner=root coworker
 
 dropdb:
-	docker exec -it management-app-demo-db dropdb zeal_dev
+	docker exec -it coworker-db dropdb coworker
 
 migrateup:
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/zeal_dev?sslmode=disable" -verbose up
+	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/coworker?sslmode=disable" -verbose up
 
 migratedown:
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/zeal_dev?sslmode=disable" -verbose down
+	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/coworker?sslmode=disable" -verbose down
 
 migrateforce:
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/zeal_dev?sslmode=disable" force 1
+	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/coworker?sslmode=disable" force 1
 
 sqlc:
 	sqlc generate
@@ -26,6 +26,6 @@ server:
 	go run main.go
 
 mock:
-	mockgen -package mockdb -destination db/mock/store.go github.com/ot07/management-app-demo-backend/db/sqlc Store
+	mockgen -package mockdb -destination db/mock/store.go github.com/ot07/coworker-backend/db/sqlc Store
 
 .PHONY: postgres createdb dropdb migrateup migratedown migrateforce sqlc test server mock

@@ -1,4 +1,4 @@
-module github.com/ot07/management-app-demo-backend
+module github.com/ot07/coworker-backend
 
 go 1.19
 

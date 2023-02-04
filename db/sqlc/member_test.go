@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"github.com/google/uuid"
-	"github.com/ot07/management-app-demo-backend/util"
+	"github.com/ot07/coworker-backend/util"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
