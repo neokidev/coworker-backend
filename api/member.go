@@ -13,6 +13,26 @@ type createMemberRequest struct {
 	Email     db.NullString `json:"email" validate:"email"`
 }
 
+type memberResponse struct {
+	ID        uuid.UUID         `json:"id"`
+	FirstName string            `json:"first_name"`
+	LastName  string            `json:"last_name"`
+	Email     db.NullString     `json:"email"`
+	Status    db.MemberStatuses `json:"status"`
+	CreatedAt db.NullTime       `json:"created_at"`
+}
+
+func newMemberResponse(user db.Member) memberResponse {
+	return memberResponse{
+		ID:        user.ID,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     db.NullString{NullString: user.Email},
+		Status:    user.Status,
+		CreatedAt: db.NullTime{NullTime: user.CreatedAt},
+	}
+}
+
 func (server *Server) createMember(c *fiber.Ctx) error {
 	req := new(createMemberRequest)
 
@@ -36,5 +56,6 @@ func (server *Server) createMember(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(errorResponse(err))
 	}
 
-	return c.Status(fiber.StatusOK).JSON(member)
+	rsp := newMemberResponse(member)
+	return c.Status(fiber.StatusOK).JSON(rsp)
 }
