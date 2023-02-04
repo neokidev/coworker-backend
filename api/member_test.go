@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/golang/mock/gomock"
+	"github.com/google/uuid"
 	mockdb "github.com/ot07/management-app-demo-backend/db/mock"
 	db "github.com/ot07/management-app-demo-backend/db/sqlc"
 	"github.com/ot07/management-app-demo-backend/util"
@@ -17,28 +18,50 @@ import (
 func TestGetMemberAPI(t *testing.T) {
 	member := randomMember()
 
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	testCases := []struct {
+		name          string
+		memberID      uuid.UUID
+		buildStubs    func(store *mockdb.MockStore)
+		checkResponse func(t *testing.T, response *http.Response)
+	}{
+		{
+			name:     "OK",
+			memberID: member.ID,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetMember(gomock.Any(), gomock.Eq(member.ID)).
+					Times(1).
+					Return(member, nil)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusOK, response.StatusCode)
+				requireBodyMatchMember(t, response.Body, member)
+			},
+		},
+		// TODO: add more cases
+	}
 
-	store := mockdb.NewMockStore(ctrl)
-	// build stubs
-	store.EXPECT().
-		GetMember(gomock.Any(), gomock.Eq(member.ID)).
-		Times(1).
-		Return(member, nil)
+	for i := range testCases {
+		tc := testCases[i]
 
-	// start test server and send request
-	server := NewServer(store)
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
-	url := fmt.Sprintf("/members/%s", member.ID)
-	request, err := http.NewRequest(http.MethodGet, url, nil)
-	require.NoError(t, err)
+			store := mockdb.NewMockStore(ctrl)
+			tc.buildStubs(store)
 
-	response, err := server.app.Test(request, int(time.Second.Milliseconds()))
+			// start test server and send request
+			server := NewServer(store)
 
-	// check response
-	require.Equal(t, http.StatusOK, response.StatusCode)
-	requireBodyMatchMember(t, response.Body, member)
+			url := fmt.Sprintf("/members/%s", member.ID)
+			request, err := http.NewRequest(http.MethodGet, url, nil)
+			require.NoError(t, err)
+
+			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
+			tc.checkResponse(t, response)
+		})
+	}
 }
 
 func randomMember() db.Member {
