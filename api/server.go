@@ -10,12 +10,12 @@ var validate = validator.New()
 
 // Server serves HTTP requests for this app service.
 type Server struct {
-	store *db.Store
+	store db.Store
 	app   *fiber.App
 }
 
 // NewServer creates a new HTTP server and setup routing.
-func NewServer(store *db.Store) *Server {
+func NewServer(store db.Store) *Server {
 	app := fiber.New()
 	server := &Server{store: store, app: app}
 

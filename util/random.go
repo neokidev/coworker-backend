@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"math/rand"
 	"strings"
 	"time"
@@ -34,4 +35,9 @@ func RandomName() string {
 // RandomEmail generates a random email
 func RandomEmail() string {
 	return fmt.Sprintf("%s@email.com", RandomString(6))
+}
+
+// RandomUUID generates a uuid
+func RandomUUID() uuid.UUID {
+	return uuid.New()
 }
