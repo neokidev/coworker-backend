@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	db "github.com/ot07/coworker-backend/db/sqlc"
 )
 
@@ -17,6 +18,8 @@ type Server struct {
 // NewServer creates a new HTTP server and setup routing.
 func NewServer(store db.Store) *Server {
 	app := fiber.New()
+	app.Use(cors.New())
+
 	server := &Server{store: store, app: app}
 
 	app.Post("/members", server.createMember)
