@@ -1,0 +1,20 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=postgres
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_SOURCE=postgresql://postgres:secret@db:5432/postgres?sslmode=disable
+    depends_on:
+      - db
+    entrypoint: [ "/app/wait-for.sh", "db:5432", "--", "/app/start.sh" ]
+    command: [ "/app/main" ]
