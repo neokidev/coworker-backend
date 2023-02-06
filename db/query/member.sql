@@ -1,8 +1,8 @@
 -- name: CreateMember :one
 INSERT INTO members (
-  id, first_name, last_name, email, status
+  id, first_name, last_name, email
 ) VALUES (
-  $1, $2, $3, sqlc.narg(email), sqlc.narg(status)
+  $1, $2, $3, $4
 )
 RETURNING *;
 
@@ -21,8 +21,7 @@ UPDATE members
 SET
   first_name = COALESCE(sqlc.narg(first_name), first_name),
   last_name = COALESCE(sqlc.narg(last_name), last_name),
-  email = COALESCE(sqlc.narg(email), email),
-  status = COALESCE(sqlc.narg(status), status)
+  email = COALESCE(sqlc.narg(email), email)
 WHERE id = $1
 RETURNING *;
 

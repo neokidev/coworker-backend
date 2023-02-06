@@ -14,19 +14,18 @@ import (
 
 const createMember = `-- name: CreateMember :one
 INSERT INTO members (
-  id, first_name, last_name, email, status
+  id, first_name, last_name, email
 ) VALUES (
-  $1, $2, $3, $4, $5
+  $1, $2, $3, $4
 )
-RETURNING id, first_name, last_name, email, status, created_at
+RETURNING id, first_name, last_name, email, created_at
 `
 
 type CreateMemberParams struct {
-	ID        uuid.UUID          `json:"id"`
-	FirstName string             `json:"first_name"`
-	LastName  string             `json:"last_name"`
-	Email     sql.NullString     `json:"email"`
-	Status    NullMemberStatuses `json:"status"`
+	ID        uuid.UUID      `json:"id"`
+	FirstName string         `json:"first_name"`
+	LastName  string         `json:"last_name"`
+	Email     sql.NullString `json:"email"`
 }
 
 func (q *Queries) CreateMember(ctx context.Context, arg CreateMemberParams) (Member, error) {
@@ -35,7 +34,6 @@ func (q *Queries) CreateMember(ctx context.Context, arg CreateMemberParams) (Mem
 		arg.FirstName,
 		arg.LastName,
 		arg.Email,
-		arg.Status,
 	)
 	var i Member
 	err := row.Scan(
@@ -43,7 +41,6 @@ func (q *Queries) CreateMember(ctx context.Context, arg CreateMemberParams) (Mem
 		&i.FirstName,
 		&i.LastName,
 		&i.Email,
-		&i.Status,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -60,7 +57,7 @@ func (q *Queries) DeleteMember(ctx context.Context, id uuid.UUID) error {
 }
 
 const getMember = `-- name: GetMember :one
-SELECT id, first_name, last_name, email, status, created_at FROM members
+SELECT id, first_name, last_name, email, created_at FROM members
 WHERE id = $1 LIMIT 1
 `
 
@@ -72,14 +69,13 @@ func (q *Queries) GetMember(ctx context.Context, id uuid.UUID) (Member, error) {
 		&i.FirstName,
 		&i.LastName,
 		&i.Email,
-		&i.Status,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const listMembers = `-- name: ListMembers :many
-SELECT id, first_name, last_name, email, status, created_at FROM members
+SELECT id, first_name, last_name, email, created_at FROM members
 ORDER BY id
 LIMIT $1
 OFFSET $2
@@ -104,7 +100,6 @@ func (q *Queries) ListMembers(ctx context.Context, arg ListMembersParams) ([]Mem
 			&i.FirstName,
 			&i.LastName,
 			&i.Email,
-			&i.Status,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -125,18 +120,16 @@ UPDATE members
 SET
   first_name = COALESCE($2, first_name),
   last_name = COALESCE($3, last_name),
-  email = COALESCE($4, email),
-  status = COALESCE($5, status)
+  email = COALESCE($4, email)
 WHERE id = $1
-RETURNING id, first_name, last_name, email, status, created_at
+RETURNING id, first_name, last_name, email, created_at
 `
 
 type UpdateMemberParams struct {
-	ID        uuid.UUID          `json:"id"`
-	FirstName sql.NullString     `json:"first_name"`
-	LastName  sql.NullString     `json:"last_name"`
-	Email     sql.NullString     `json:"email"`
-	Status    NullMemberStatuses `json:"status"`
+	ID        uuid.UUID      `json:"id"`
+	FirstName sql.NullString `json:"first_name"`
+	LastName  sql.NullString `json:"last_name"`
+	Email     sql.NullString `json:"email"`
 }
 
 func (q *Queries) UpdateMember(ctx context.Context, arg UpdateMemberParams) (Member, error) {
@@ -145,7 +138,6 @@ func (q *Queries) UpdateMember(ctx context.Context, arg UpdateMemberParams) (Mem
 		arg.FirstName,
 		arg.LastName,
 		arg.Email,
-		arg.Status,
 	)
 	var i Member
 	err := row.Scan(
@@ -153,7 +145,6 @@ func (q *Queries) UpdateMember(ctx context.Context, arg UpdateMemberParams) (Mem
 		&i.FirstName,
 		&i.LastName,
 		&i.Email,
-		&i.Status,
 		&i.CreatedAt,
 	)
 	return i, err

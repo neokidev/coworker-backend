@@ -51,6 +51,20 @@ func (mr *MockStoreMockRecorder) CreateMember(arg0, arg1 interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateMember", reflect.TypeOf((*MockStore)(nil).CreateMember), arg0, arg1)
 }
 
+// DeleteMember mocks base method.
+func (m *MockStore) DeleteMember(arg0 context.Context, arg1 uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteMember", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteMember indicates an expected call of DeleteMember.
+func (mr *MockStoreMockRecorder) DeleteMember(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteMember", reflect.TypeOf((*MockStore)(nil).DeleteMember), arg0, arg1)
+}
+
 // GetMember mocks base method.
 func (m *MockStore) GetMember(arg0 context.Context, arg1 uuid.UUID) (db.Member, error) {
 	m.ctrl.T.Helper()
@@ -79,4 +93,19 @@ func (m *MockStore) ListMembers(arg0 context.Context, arg1 db.ListMembersParams)
 func (mr *MockStoreMockRecorder) ListMembers(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListMembers", reflect.TypeOf((*MockStore)(nil).ListMembers), arg0, arg1)
+}
+
+// UpdateMember mocks base method.
+func (m *MockStore) UpdateMember(arg0 context.Context, arg1 db.UpdateMemberParams) (db.Member, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateMember", arg0, arg1)
+	ret0, _ := ret[0].(db.Member)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateMember indicates an expected call of UpdateMember.
+func (mr *MockStoreMockRecorder) UpdateMember(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMember", reflect.TypeOf((*MockStore)(nil).UpdateMember), arg0, arg1)
 }

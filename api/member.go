@@ -14,12 +14,11 @@ type createMemberRequest struct {
 }
 
 type memberResponse struct {
-	ID        uuid.UUID         `json:"id"`
-	FirstName string            `json:"first_name"`
-	LastName  string            `json:"last_name"`
-	Email     db.NullString     `json:"email"`
-	Status    db.MemberStatuses `json:"status"`
-	CreatedAt db.NullTime       `json:"created_at"`
+	ID        uuid.UUID     `json:"id"`
+	FirstName string        `json:"first_name"`
+	LastName  string        `json:"last_name"`
+	Email     db.NullString `json:"email"`
+	CreatedAt db.NullTime   `json:"created_at"`
 }
 
 func newMemberResponse(member db.Member) memberResponse {
@@ -28,7 +27,6 @@ func newMemberResponse(member db.Member) memberResponse {
 		FirstName: member.FirstName,
 		LastName:  member.LastName,
 		Email:     db.NullString{NullString: member.Email},
-		Status:    member.Status,
 		CreatedAt: db.NullTime{NullTime: member.CreatedAt},
 	}
 }
