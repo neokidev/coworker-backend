@@ -4,5 +4,5 @@ CREATE TABLE "members"
     "first_name" varchar          NOT NULL,
     "last_name"  varchar          NOT NULL,
     "email"      varchar,
-    "created_at" timestamptz DEFAULT (now())
+    "created_at" timestamptz      NOT NULL DEFAULT (now())
 );
