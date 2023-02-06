@@ -6,6 +6,7 @@ package db
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -15,5 +16,5 @@ type Member struct {
 	FirstName string         `json:"first_name"`
 	LastName  string         `json:"last_name"`
 	Email     sql.NullString `json:"email"`
-	CreatedAt sql.NullTime   `json:"created_at"`
+	CreatedAt time.Time      `json:"created_at"`
 }
