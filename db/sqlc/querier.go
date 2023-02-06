@@ -12,8 +12,10 @@ import (
 
 type Querier interface {
 	CreateMember(ctx context.Context, arg CreateMemberParams) (Member, error)
+	DeleteMember(ctx context.Context, id uuid.UUID) error
 	GetMember(ctx context.Context, id uuid.UUID) (Member, error)
 	ListMembers(ctx context.Context, arg ListMembersParams) ([]Member, error)
+	UpdateMember(ctx context.Context, arg UpdateMemberParams) (Member, error)
 }
 
 var _ Querier = (*Queries)(nil)
