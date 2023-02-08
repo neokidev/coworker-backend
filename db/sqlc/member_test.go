@@ -65,7 +65,7 @@ func TestListMember(t *testing.T) {
 	}
 }
 
-func TestUpdateAccount(t *testing.T) {
+func TestUpdateMember(t *testing.T) {
 	member1 := createRandomMember(t)
 
 	arg := UpdateMemberParams{
@@ -86,7 +86,7 @@ func TestUpdateAccount(t *testing.T) {
 	require.WithinDuration(t, member1.CreatedAt, member2.CreatedAt, time.Second)
 }
 
-func TestDeleteAccount(t *testing.T) {
+func TestDeleteMember(t *testing.T) {
 	member1 := createRandomMember(t)
 	err := testQueries.DeleteMember(context.Background(), member1.ID)
 	require.NoError(t, err)
