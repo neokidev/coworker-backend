@@ -156,3 +156,26 @@ func (server *Server) updateMember(c *fiber.Ctx) error {
 	rsp := newMemberResponse(member)
 	return c.Status(fiber.StatusOK).JSON(rsp)
 }
+
+type deleteMemberRequest struct {
+	ID uuid.UUID `json:"id" validate:"required"`
+}
+
+func (server *Server) deleteMember(c *fiber.Ctx) error {
+	req := new(deleteMemberRequest)
+
+	if err := c.BodyParser(req); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(errorResponse(err))
+	}
+
+	if err := validate.Struct(req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(errorResponse(err))
+	}
+
+	err := server.store.DeleteMember(c.Context(), req.ID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(errorResponse(err))
+	}
+
+	return c.Status(fiber.StatusNoContent).JSON(nil)
+}
