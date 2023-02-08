@@ -18,7 +18,7 @@ func (nb NullBool) MarshalJSON() ([]byte, error) {
 	return json.Marshal(nil)
 }
 
-func (nb NullBool) UnmarshalJSON(data []byte) error {
+func (nb *NullBool) UnmarshalJSON(data []byte) error {
 	var b *bool
 	if err := json.Unmarshal(data, &b); err != nil {
 		return err
@@ -44,7 +44,7 @@ func (nf NullFloat64) MarshalJSON() ([]byte, error) {
 	return json.Marshal(nil)
 }
 
-func (nf NullFloat64) UnmarshalJSON(data []byte) error {
+func (nf *NullFloat64) UnmarshalJSON(data []byte) error {
 	var f *float64
 	if err := json.Unmarshal(data, &f); err != nil {
 		return err
@@ -70,7 +70,7 @@ func (ni NullInt64) MarshalJSON() ([]byte, error) {
 	return json.Marshal(nil)
 }
 
-func (ni NullInt64) UnmarshalJSON(data []byte) error {
+func (ni *NullInt64) UnmarshalJSON(data []byte) error {
 	var i *int64
 	if err := json.Unmarshal(data, &i); err != nil {
 		return err
@@ -96,7 +96,7 @@ func (ns NullString) MarshalJSON() ([]byte, error) {
 	return json.Marshal(nil)
 }
 
-func (ns NullString) UnmarshalJSON(data []byte) error {
+func (ns *NullString) UnmarshalJSON(data []byte) error {
 	var s *string
 	if err := json.Unmarshal(data, &s); err != nil {
 		return err
@@ -122,7 +122,7 @@ func (ns NullTime) MarshalJSON() ([]byte, error) {
 	return json.Marshal(nil)
 }
 
-func (ns NullTime) UnmarshalJSON(data []byte) error {
+func (ns *NullTime) UnmarshalJSON(data []byte) error {
 	var t *time.Time
 	if err := json.Unmarshal(data, &t); err != nil {
 		return err

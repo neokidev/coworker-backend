@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	db "github.com/ot07/coworker-backend/db/sqlc"
+	"time"
 )
 
 type createMemberRequest struct {
@@ -18,7 +19,7 @@ type memberResponse struct {
 	FirstName string        `json:"first_name"`
 	LastName  string        `json:"last_name"`
 	Email     db.NullString `json:"email"`
-	CreatedAt db.NullTime   `json:"created_at"`
+	CreatedAt time.Time     `json:"created_at"`
 }
 
 func newMemberResponse(member db.Member) memberResponse {
@@ -27,7 +28,7 @@ func newMemberResponse(member db.Member) memberResponse {
 		FirstName: member.FirstName,
 		LastName:  member.LastName,
 		Email:     db.NullString{NullString: member.Email},
-		CreatedAt: db.NullTime{NullTime: member.CreatedAt},
+		CreatedAt: member.CreatedAt,
 	}
 }
 
