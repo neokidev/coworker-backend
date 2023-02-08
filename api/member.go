@@ -122,3 +122,37 @@ func (server *Server) listMembers(c *fiber.Ctx) error {
 	rsp := newMembersResponse(members)
 	return c.Status(fiber.StatusOK).JSON(rsp)
 }
+
+type updateMemberRequest struct {
+	ID        uuid.UUID     `json:"id" validate:"required"`
+	FirstName db.NullString `json:"first_name"`
+	LastName  db.NullString `json:"last_name"`
+	Email     db.NullString `json:"email" validate:"email"`
+}
+
+func (server *Server) updateMember(c *fiber.Ctx) error {
+	req := new(updateMemberRequest)
+
+	if err := c.BodyParser(req); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(errorResponse(err))
+	}
+
+	if err := validate.Struct(req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(errorResponse(err))
+	}
+
+	arg := db.UpdateMemberParams{
+		ID:        req.ID,
+		FirstName: req.FirstName.NullString,
+		LastName:  req.LastName.NullString,
+		Email:     req.Email.NullString,
+	}
+
+	member, err := server.store.UpdateMember(c.Context(), arg)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(errorResponse(err))
+	}
+
+	rsp := newMemberResponse(member)
+	return c.Status(fiber.StatusOK).JSON(rsp)
+}
