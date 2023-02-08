@@ -132,6 +132,76 @@ func TestCreateMemberAPI(t *testing.T) {
 	}
 }
 
+func TestListMembersAPI(t *testing.T) {
+	n := 5
+	members := make([]db.Member, n)
+	for i := 0; i < n; i++ {
+		members[i] = randomMember()
+	}
+
+	type Query struct {
+		pageID   int
+		pageSize int
+	}
+
+	testCases := []struct {
+		name          string
+		query         Query
+		buildStubs    func(store *mockdb.MockStore)
+		checkResponse func(t *testing.T, response *http.Response)
+	}{
+		{
+			name: "OK",
+			query: Query{
+				pageID:   1,
+				pageSize: n,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				arg := db.ListMembersParams{
+					Limit:  int32(n),
+					Offset: 0,
+				}
+
+				store.EXPECT().
+					ListMembers(gomock.Any(), gomock.Eq(arg)).
+					Times(1).
+					Return(members, nil)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusOK, response.StatusCode)
+				requireBodyMatchMembers(t, response.Body, members)
+			},
+		},
+	}
+
+	for i := range testCases {
+		tc := testCases[i]
+
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			store := mockdb.NewMockStore(ctrl)
+			tc.buildStubs(store)
+
+			server := NewServer(store)
+
+			url := "/members"
+			request, err := http.NewRequest(http.MethodGet, url, nil)
+			require.NoError(t, err)
+
+			// Add query parameters to request URL
+			q := request.URL.Query()
+			q.Add("page_id", fmt.Sprintf("%d", tc.query.pageID))
+			q.Add("page_size", fmt.Sprintf("%d", tc.query.pageSize))
+			request.URL.RawQuery = q.Encode()
+
+			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
+			tc.checkResponse(t, response)
+		})
+	}
+}
+
 func randomMember() db.Member {
 	return db.Member{
 		ID:        util.RandomUUID(),
@@ -149,12 +219,33 @@ func requireBodyMatchMember(t *testing.T, body io.ReadCloser, member db.Member) 
 	err = json.Unmarshal(data, &gotMember)
 	require.NoError(t, err)
 
+	requireMemberResponseMatchMember(t, gotMember, member)
+
+	err = body.Close()
+	require.NoError(t, err)
+}
+
+func requireBodyMatchMembers(t *testing.T, body io.ReadCloser, members []db.Member) {
+	data, err := io.ReadAll(body)
+	require.NoError(t, err)
+
+	var gotMembers []memberResponse
+	err = json.Unmarshal(data, &gotMembers)
+	require.NoError(t, err)
+
+	require.Equal(t, len(members), len(gotMembers))
+	for i := 0; i < len(members); i++ {
+		requireMemberResponseMatchMember(t, gotMembers[i], members[i])
+	}
+
+	err = body.Close()
+	require.NoError(t, err)
+}
+
+func requireMemberResponseMatchMember(t *testing.T, gotMember memberResponse, member db.Member) {
 	require.Equal(t, member.ID, gotMember.ID)
 	require.Equal(t, member.FirstName, gotMember.FirstName)
 	require.Equal(t, member.LastName, gotMember.LastName)
 	require.Equal(t, member.Email.String, gotMember.Email.String)
 	require.Equal(t, member.CreatedAt, gotMember.CreatedAt)
-
-	err = body.Close()
-	require.NoError(t, err)
 }
