@@ -15,9 +15,9 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_USER: postgres
+          POSTGRES_USER: root
           POSTGRES_PASSWORD: secret
-          POSTGRES_DB: postgres
+          POSTGRES_DB: coworker
         ports:
           - 5432:5432
         options: >-
