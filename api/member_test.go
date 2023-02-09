@@ -72,17 +72,17 @@ func TestCreateMemberAPI(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		body          createMemberRequest
+		body          fiber.Map
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, response *http.Response)
 	}{
 		{
 			name: "OK",
-			body: createMemberRequest{
-				ID:        member.ID,
-				FirstName: member.FirstName,
-				LastName:  member.LastName,
-				Email:     db.NullString{NullString: member.Email},
+			body: fiber.Map{
+				"id":         member.ID,
+				"first_name": member.FirstName,
+				"last_name":  member.LastName,
+				"email":      member.Email.String,
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.CreateMemberParams{

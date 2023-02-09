@@ -60,7 +60,7 @@ func (server *Server) createMember(c *fiber.Ctx) error {
 }
 
 type getMemberRequest struct {
-	ID uuid.UUID `json:"id" validate:"required"`
+	ID uuid.UUID `params:"id" validate:"required"`
 }
 
 func (server *Server) getMember(c *fiber.Ctx) error {
@@ -124,7 +124,7 @@ func (server *Server) listMembers(c *fiber.Ctx) error {
 }
 
 type updateMemberRequest struct {
-	ID        uuid.UUID     `json:"id" validate:"required"`
+	ID        uuid.UUID     `params:"id" validate:"required"`
 	FirstName db.NullString `json:"first_name"`
 	LastName  db.NullString `json:"last_name"`
 	Email     db.NullString `json:"email" validate:"email"`
@@ -132,6 +132,10 @@ type updateMemberRequest struct {
 
 func (server *Server) updateMember(c *fiber.Ctx) error {
 	req := new(updateMemberRequest)
+
+	if err := c.ParamsParser(req); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(errorResponse(err))
+	}
 
 	if err := c.BodyParser(req); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(errorResponse(err))
