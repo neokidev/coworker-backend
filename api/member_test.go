@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	mockdb "github.com/ot07/coworker-backend/db/mock"
@@ -195,6 +196,71 @@ func TestListMembersAPI(t *testing.T) {
 			q.Add("page_id", fmt.Sprintf("%d", tc.query.pageID))
 			q.Add("page_size", fmt.Sprintf("%d", tc.query.pageSize))
 			request.URL.RawQuery = q.Encode()
+
+			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
+			tc.checkResponse(t, response)
+		})
+	}
+}
+
+func TestUpdateMemberAPI(t *testing.T) {
+	member := randomMember()
+
+	testCases := []struct {
+		name          string
+		body          fiber.Map
+		buildStubs    func(store *mockdb.MockStore)
+		checkResponse func(t *testing.T, response *http.Response)
+	}{
+		{
+			name: "OK",
+			body: fiber.Map{
+				"first_name": member.FirstName,
+				"last_name":  member.LastName,
+				"email":      member.Email.String,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				arg := db.UpdateMemberParams{
+					ID:        member.ID,
+					FirstName: sql.NullString{String: member.FirstName, Valid: true},
+					LastName:  sql.NullString{String: member.LastName, Valid: true},
+					Email:     member.Email,
+				}
+
+				store.EXPECT().
+					UpdateMember(gomock.Any(), gomock.Eq(arg)).
+					Times(1).
+					Return(member, nil)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusOK, response.StatusCode)
+				requireBodyMatchMember(t, response.Body, member)
+			},
+		},
+	}
+
+	for i := range testCases {
+		tc := testCases[i]
+
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			store := mockdb.NewMockStore(ctrl)
+			tc.buildStubs(store)
+
+			// start test server and send request
+			server := NewServer(store)
+
+			// Marshal body data to JSON
+			data, err := json.Marshal(tc.body)
+			require.NoError(t, err)
+
+			url := fmt.Sprintf("/members/%s", member.ID)
+			request, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(data))
+			require.NoError(t, err)
+
+			request.Header.Set("Content-Type", "application/json")
 
 			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
 			tc.checkResponse(t, response)
