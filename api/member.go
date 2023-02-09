@@ -162,13 +162,13 @@ func (server *Server) updateMember(c *fiber.Ctx) error {
 }
 
 type deleteMemberRequest struct {
-	ID uuid.UUID `json:"id" validate:"required"`
+	ID uuid.UUID `params:"id" validate:"required"`
 }
 
 func (server *Server) deleteMember(c *fiber.Ctx) error {
 	req := new(deleteMemberRequest)
 
-	if err := c.BodyParser(req); err != nil {
+	if err := c.ParamsParser(req); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(errorResponse(err))
 	}
 
