@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	db "github.com/ot07/coworker-backend/db/sqlc"
+	"time"
 )
 
 type createMemberRequest struct {
@@ -14,12 +15,11 @@ type createMemberRequest struct {
 }
 
 type memberResponse struct {
-	ID        uuid.UUID         `json:"id"`
-	FirstName string            `json:"first_name"`
-	LastName  string            `json:"last_name"`
-	Email     db.NullString     `json:"email"`
-	Status    db.MemberStatuses `json:"status"`
-	CreatedAt db.NullTime       `json:"created_at"`
+	ID        uuid.UUID     `json:"id"`
+	FirstName string        `json:"first_name"`
+	LastName  string        `json:"last_name"`
+	Email     db.NullString `json:"email"`
+	CreatedAt time.Time     `json:"created_at"`
 }
 
 func newMemberResponse(member db.Member) memberResponse {
@@ -28,8 +28,7 @@ func newMemberResponse(member db.Member) memberResponse {
 		FirstName: member.FirstName,
 		LastName:  member.LastName,
 		Email:     db.NullString{NullString: member.Email},
-		Status:    member.Status,
-		CreatedAt: db.NullTime{NullTime: member.CreatedAt},
+		CreatedAt: member.CreatedAt,
 	}
 }
 
@@ -61,7 +60,7 @@ func (server *Server) createMember(c *fiber.Ctx) error {
 }
 
 type getMemberRequest struct {
-	ID uuid.UUID `json:"id" validate:"required"`
+	ID uuid.UUID `params:"id" validate:"required"`
 }
 
 func (server *Server) getMember(c *fiber.Ctx) error {
@@ -122,4 +121,65 @@ func (server *Server) listMembers(c *fiber.Ctx) error {
 
 	rsp := newMembersResponse(members)
 	return c.Status(fiber.StatusOK).JSON(rsp)
+}
+
+type updateMemberRequest struct {
+	ID        uuid.UUID     `params:"id" validate:"required"`
+	FirstName db.NullString `json:"first_name"`
+	LastName  db.NullString `json:"last_name"`
+	Email     db.NullString `json:"email" validate:"email"`
+}
+
+func (server *Server) updateMember(c *fiber.Ctx) error {
+	req := new(updateMemberRequest)
+
+	if err := c.ParamsParser(req); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(errorResponse(err))
+	}
+
+	if err := c.BodyParser(req); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(errorResponse(err))
+	}
+
+	if err := validate.Struct(req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(errorResponse(err))
+	}
+
+	arg := db.UpdateMemberParams{
+		ID:        req.ID,
+		FirstName: req.FirstName.NullString,
+		LastName:  req.LastName.NullString,
+		Email:     req.Email.NullString,
+	}
+
+	member, err := server.store.UpdateMember(c.Context(), arg)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(errorResponse(err))
+	}
+
+	rsp := newMemberResponse(member)
+	return c.Status(fiber.StatusOK).JSON(rsp)
+}
+
+type deleteMemberRequest struct {
+	ID uuid.UUID `params:"id" validate:"required"`
+}
+
+func (server *Server) deleteMember(c *fiber.Ctx) error {
+	req := new(deleteMemberRequest)
+
+	if err := c.ParamsParser(req); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(errorResponse(err))
+	}
+
+	if err := validate.Struct(req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(errorResponse(err))
+	}
+
+	err := server.store.DeleteMember(c.Context(), req.ID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(errorResponse(err))
+	}
+
+	return c.Status(fiber.StatusNoContent).JSON(nil)
 }

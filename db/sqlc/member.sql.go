@@ -18,7 +18,7 @@ INSERT INTO members (
 ) VALUES (
   $1, $2, $3, $4
 )
-RETURNING id, first_name, last_name, email, status, created_at
+RETURNING id, first_name, last_name, email, created_at
 `
 
 type CreateMemberParams struct {
@@ -41,14 +41,23 @@ func (q *Queries) CreateMember(ctx context.Context, arg CreateMemberParams) (Mem
 		&i.FirstName,
 		&i.LastName,
 		&i.Email,
-		&i.Status,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
+const deleteMember = `-- name: DeleteMember :exec
+DELETE FROM members
+WHERE id = $1
+`
+
+func (q *Queries) DeleteMember(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteMember, id)
+	return err
+}
+
 const getMember = `-- name: GetMember :one
-SELECT id, first_name, last_name, email, status, created_at FROM members
+SELECT id, first_name, last_name, email, created_at FROM members
 WHERE id = $1 LIMIT 1
 `
 
@@ -60,14 +69,13 @@ func (q *Queries) GetMember(ctx context.Context, id uuid.UUID) (Member, error) {
 		&i.FirstName,
 		&i.LastName,
 		&i.Email,
-		&i.Status,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const listMembers = `-- name: ListMembers :many
-SELECT id, first_name, last_name, email, status, created_at FROM members
+SELECT id, first_name, last_name, email, created_at FROM members
 ORDER BY id
 LIMIT $1
 OFFSET $2
@@ -92,7 +100,6 @@ func (q *Queries) ListMembers(ctx context.Context, arg ListMembersParams) ([]Mem
 			&i.FirstName,
 			&i.LastName,
 			&i.Email,
-			&i.Status,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -106,4 +113,39 @@ func (q *Queries) ListMembers(ctx context.Context, arg ListMembersParams) ([]Mem
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateMember = `-- name: UpdateMember :one
+UPDATE members
+SET
+  first_name = COALESCE($2, first_name),
+  last_name = COALESCE($3, last_name),
+  email = COALESCE($4, email)
+WHERE id = $1
+RETURNING id, first_name, last_name, email, created_at
+`
+
+type UpdateMemberParams struct {
+	ID        uuid.UUID      `json:"id"`
+	FirstName sql.NullString `json:"first_name"`
+	LastName  sql.NullString `json:"last_name"`
+	Email     sql.NullString `json:"email"`
+}
+
+func (q *Queries) UpdateMember(ctx context.Context, arg UpdateMemberParams) (Member, error) {
+	row := q.db.QueryRowContext(ctx, updateMember,
+		arg.ID,
+		arg.FirstName,
+		arg.LastName,
+		arg.Email,
+	)
+	var i Member
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.LastName,
+		&i.Email,
+		&i.CreatedAt,
+	)
+	return i, err
 }

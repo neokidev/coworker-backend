@@ -25,6 +25,8 @@ func NewServer(store db.Store) *Server {
 	app.Post("/members", server.createMember)
 	app.Get("/members/:id", server.getMember)
 	app.Get("/members", server.listMembers)
+	app.Put("/members/:id", server.updateMember)
+	app.Delete("/members/:id", server.deleteMember)
 
 	return server
 }

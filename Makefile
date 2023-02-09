@@ -1,20 +1,20 @@
 postgres:
-	docker run --name coworker-db --network coworker-network -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=secret -d postgres:15-alpine
+	docker run --name coworker-db --network coworker-network -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:15-alpine
 
 createdb:
-	docker exec -it coworker-db createdb --username=postgres --owner=postgres postgres
+	docker exec -it coworker-db createdb --username=root --owner=root coworker
 
 dropdb:
-	docker exec -it coworker-db dropdb postgres
+	docker exec -it coworker-db dropdb coworker
 
 migrateup:
-	migrate -path db/migration -database "postgresql://postgres:secret@localhost:5432/postgres?sslmode=disable" -verbose up
+	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/coworker?sslmode=disable" -verbose up
 
 migratedown:
-	migrate -path db/migration -database "postgresql://postgres:secret@localhost:5432/postgres?sslmode=disable" -verbose down
+	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/coworker?sslmode=disable" -verbose down
 
 migrateforce:
-	migrate -path db/migration -database "postgresql://postgres:secret@localhost:5432/postgres?sslmode=disable" force 1
+	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/coworker?sslmode=disable" force 1
 
 sqlc:
 	sqlc generate

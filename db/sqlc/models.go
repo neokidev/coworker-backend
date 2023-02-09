@@ -6,59 +6,15 @@ package db
 
 import (
 	"database/sql"
-	"database/sql/driver"
-	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 )
-
-type MemberStatuses string
-
-const (
-	MemberStatusesActive  MemberStatuses = "active"
-	MemberStatusesOffline MemberStatuses = "offline"
-)
-
-func (e *MemberStatuses) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = MemberStatuses(s)
-	case string:
-		*e = MemberStatuses(s)
-	default:
-		return fmt.Errorf("unsupported scan type for MemberStatuses: %T", src)
-	}
-	return nil
-}
-
-type NullMemberStatuses struct {
-	MemberStatuses MemberStatuses
-	Valid          bool // Valid is true if MemberStatuses is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullMemberStatuses) Scan(value interface{}) error {
-	if value == nil {
-		ns.MemberStatuses, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.MemberStatuses.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullMemberStatuses) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return ns.MemberStatuses, nil
-}
 
 type Member struct {
 	ID        uuid.UUID      `json:"id"`
 	FirstName string         `json:"first_name"`
 	LastName  string         `json:"last_name"`
 	Email     sql.NullString `json:"email"`
-	Status    MemberStatuses `json:"status"`
-	CreatedAt sql.NullTime   `json:"created_at"`
+	CreatedAt time.Time      `json:"created_at"`
 }
