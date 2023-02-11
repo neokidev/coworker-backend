@@ -4,6 +4,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/swagger"
 	db "github.com/ot07/coworker-backend/db/sqlc"
 )
 
@@ -22,11 +23,16 @@ func NewServer(store db.Store) *Server {
 
 	server := &Server{store: store, app: app}
 
-	app.Post("/members", server.createMember)
-	app.Get("/members/:id", server.getMember)
-	app.Get("/members", server.listMembers)
-	app.Put("/members/:id", server.updateMember)
-	app.Delete("/members/:id", server.deleteMember)
+	api := app.Group("/api")
+	v1 := api.Group("/v1")
+
+	v1.Post("/members", server.createMember)
+	v1.Get("/members/:id", server.getMember)
+	v1.Get("/members", server.listMembers)
+	v1.Put("/members/:id", server.updateMember)
+	v1.Delete("/members/:id", server.deleteMember)
+
+	app.Get("/swagger/*", swagger.HandlerDefault)
 
 	return server
 }
@@ -36,6 +42,10 @@ func (server *Server) Start(address string) error {
 	return server.app.Listen(address)
 }
 
-func errorResponse(err error) fiber.Map {
-	return fiber.Map{"error": err.Error()}
+type errorResponse struct {
+	Error string `json:"error"`
+}
+
+func newErrorResponse(err error) errorResponse {
+	return errorResponse{Error: err.Error()}
 }

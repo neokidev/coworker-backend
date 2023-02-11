@@ -8,8 +8,12 @@ import (
 	"log"
 
 	_ "github.com/lib/pq"
+	_ "github.com/ot07/coworker-backend/docs"
 )
 
+// @title Coworker API
+// @version 0.0.1
+// @BasePath /api/v1
 func main() {
 	config, err := util.LoadConfig(".")
 	if err != nil {

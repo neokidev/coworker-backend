@@ -28,4 +28,7 @@ server:
 mock:
 	mockgen -package mockdb -destination db/mock/store.go github.com/ot07/coworker-backend/db/sqlc Store
 
+swag:
+	swag init --pd
+
 .PHONY: postgres createdb dropdb migrateup migratedown migrateforce sqlc test server mock

@@ -1,0 +1,183 @@
+basePath: /api/v1
+definitions:
+  api.createMemberRequest:
+    properties:
+      email:
+        format: email
+        type: string
+      first_name:
+        type: string
+      id:
+        format: uuid
+        type: string
+      last_name:
+        type: string
+    required:
+    - first_name
+    - id
+    - last_name
+    type: object
+  api.errorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  api.memberResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: string
+      last_name:
+        type: string
+    type: object
+  api.updateMemberRequestBody:
+    properties:
+      email:
+        format: email
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+    type: object
+info:
+  contact: {}
+  title: Coworker API
+  version: 0.0.1
+paths:
+  /members:
+    get:
+      parameters:
+      - in: query
+        minimum: 1
+        name: pageID
+        required: true
+        type: integer
+      - in: query
+        maximum: 10
+        minimum: 5
+        name: pageSize
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.memberResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      summary: List members
+      tags:
+      - members
+    post:
+      parameters:
+      - description: Member object
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.createMemberRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.memberResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      summary: Create member
+      tags:
+      - members
+  /members/{id}:
+    delete:
+      parameters:
+      - description: Member ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      summary: Delete member
+      tags:
+      - members
+    get:
+      parameters:
+      - description: Member ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.memberResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      summary: Get member
+      tags:
+      - members
+    put:
+      parameters:
+      - description: Member ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Member object
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.updateMemberRequestBody'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.memberResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      summary: Update member
+      tags:
+      - members
+swagger: "2.0"
