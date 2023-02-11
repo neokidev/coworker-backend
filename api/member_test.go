@@ -57,7 +57,7 @@ func TestGetMemberAPI(t *testing.T) {
 			// start test server and send request
 			server := NewServer(store)
 
-			url := fmt.Sprintf("/members/%s", member.ID)
+			url := fmt.Sprintf("/api/v1/members/%s", member.ID)
 			request, err := http.NewRequest(http.MethodGet, url, nil)
 			require.NoError(t, err)
 
@@ -121,7 +121,7 @@ func TestCreateMemberAPI(t *testing.T) {
 			data, err := json.Marshal(tc.body)
 			require.NoError(t, err)
 
-			url := "/members"
+			url := "/api/v1/members"
 			request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(data))
 			require.NoError(t, err)
 
@@ -187,7 +187,7 @@ func TestListMembersAPI(t *testing.T) {
 
 			server := NewServer(store)
 
-			url := "/members"
+			url := "/api/v1/members"
 			request, err := http.NewRequest(http.MethodGet, url, nil)
 			require.NoError(t, err)
 
@@ -256,7 +256,7 @@ func TestUpdateMemberAPI(t *testing.T) {
 			data, err := json.Marshal(tc.body)
 			require.NoError(t, err)
 
-			url := fmt.Sprintf("/members/%s", member.ID)
+			url := fmt.Sprintf("/api/v1/members/%s", member.ID)
 			request, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(data))
 			require.NoError(t, err)
 
@@ -306,7 +306,7 @@ func TestDeleteMemberAPI(t *testing.T) {
 			// start test server and send request
 			server := NewServer(store)
 
-			url := fmt.Sprintf("/members/%s", member.ID)
+			url := fmt.Sprintf("/api/v1/members/%s", member.ID)
 			request, err := http.NewRequest(http.MethodDelete, url, nil)
 			require.NoError(t, err)
 
