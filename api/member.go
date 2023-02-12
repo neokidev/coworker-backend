@@ -236,7 +236,7 @@ type deleteMembersRequest struct {
 
 // @Summary      Delete members
 // @Tags         members
-// @Param        query query listMembersRequest true "query"
+// @Param        query query deleteMembersRequest true "query"
 // @Success      204 {object} nil
 // @Failure      400 {object} errorResponse
 // @Failure      500 {object} errorResponse
