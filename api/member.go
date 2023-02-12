@@ -99,8 +99,8 @@ func (server *Server) getMember(c *fiber.Ctx) error {
 }
 
 type listMembersRequest struct {
-	PageID   int32 `query:"page_id" validate:"required,min=1"`
-	PageSize int32 `query:"page_size" validate:"required,min=5,max=10"`
+	PageID   int32 `query:"page_id" json:"page_id" validate:"required,min=1"`
+	PageSize int32 `query:"page_size" json:"page_size" validate:"required,min=5,max=10"`
 }
 
 type membersResponse []memberResponse

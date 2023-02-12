@@ -25,7 +25,7 @@ const docTemplate = `{
                     {
                         "minimum": 1,
                         "type": "integer",
-                        "name": "pageID",
+                        "name": "page_id",
                         "in": "query",
                         "required": true
                     },
@@ -33,7 +33,7 @@ const docTemplate = `{
                         "maximum": 10,
                         "minimum": 5,
                         "type": "integer",
-                        "name": "pageSize",
+                        "name": "page_size",
                         "in": "query",
                         "required": true
                     }

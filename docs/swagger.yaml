@@ -55,13 +55,13 @@ paths:
       parameters:
       - in: query
         minimum: 1
-        name: pageID
+        name: page_id
         required: true
         type: integer
       - in: query
         maximum: 10
         minimum: 5
-        name: pageSize
+        name: page_size
         required: true
         type: integer
       responses:
