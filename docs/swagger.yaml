@@ -51,6 +51,26 @@ info:
   version: 0.0.1
 paths:
   /members:
+    delete:
+      parameters:
+      - in: query
+        name: ids
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      summary: Delete members
+      tags:
+      - members
     get:
       parameters:
       - in: query

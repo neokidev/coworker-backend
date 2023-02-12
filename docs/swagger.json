@@ -90,6 +90,37 @@
                         }
                     }
                 }
+            },
+            "delete": {
+                "tags": [
+                    "members"
+                ],
+                "summary": "Delete members",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "ids",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorResponse"
+                        }
+                    }
+                }
             }
         },
         "/members/{id}": {
