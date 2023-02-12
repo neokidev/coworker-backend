@@ -28,3 +28,7 @@ RETURNING *;
 -- name: DeleteMember :exec
 DELETE FROM members
 WHERE id = $1;
+
+-- name: DeleteMembers :exec
+DELETE FROM members
+WHERE id = ANY($1::uuid[]);

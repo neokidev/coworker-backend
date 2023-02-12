@@ -10,6 +10,7 @@ import (
 	"database/sql"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 const createMember = `-- name: CreateMember :one
@@ -53,6 +54,16 @@ WHERE id = $1
 
 func (q *Queries) DeleteMember(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.ExecContext(ctx, deleteMember, id)
+	return err
+}
+
+const deleteMembers = `-- name: DeleteMembers :exec
+DELETE FROM members
+WHERE id = ANY($1::uuid[])
+`
+
+func (q *Queries) DeleteMembers(ctx context.Context, dollar_1 []uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteMembers, pq.Array(dollar_1))
 	return err
 }
 

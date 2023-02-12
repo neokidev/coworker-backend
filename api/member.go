@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	db "github.com/ot07/coworker-backend/db/sqlc"
+	"strings"
 	"time"
 )
 
@@ -227,4 +228,60 @@ func (server *Server) deleteMember(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusNoContent).JSON(nil)
+}
+
+type deleteMembersRequest struct {
+	IDs string `query:"ids" json:"ids" validate:"required"`
+}
+
+// @Summary      Delete members
+// @Tags         members
+// @Param        query query listMembersRequest true "query"
+// @Success      204 {object} nil
+// @Failure      400 {object} errorResponse
+// @Failure      500 {object} errorResponse
+// @Router       /members [delete]
+func (server *Server) deleteMembers(c *fiber.Ctx) error {
+	req := new(deleteMembersRequest)
+
+	if err := c.QueryParser(req); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
+	}
+
+	if err := validate.Struct(req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
+	}
+
+	IDs, err := memberIDsFromCommaSeparatedString(req.IDs)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
+	}
+
+	err = server.store.DeleteMembers(c.Context(), IDs)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
+	}
+
+	return c.Status(fiber.StatusNoContent).JSON(nil)
+}
+
+func memberIDsFromCommaSeparatedString(commaSeparatedString string) ([]uuid.UUID, error) {
+	var IDs []uuid.UUID
+	strIDs := strings.Split(commaSeparatedString, ",")
+	for _, strID := range strIDs {
+		ID, err := uuid.Parse(strID)
+		if err != nil {
+			return nil, err
+		}
+		IDs = append(IDs, ID)
+	}
+	return IDs, nil
+}
+
+func memberIDsToCommaSeparatedString(IDs []uuid.UUID) string {
+	IDStrings := make([]string, 0, len(IDs))
+	for _, ID := range IDs {
+		IDStrings = append(IDStrings, ID.String())
+	}
+	return strings.Join(IDStrings, ",")
 }
