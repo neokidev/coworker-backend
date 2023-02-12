@@ -231,7 +231,6 @@ func (server *Server) deleteMember(c *fiber.Ctx) error {
 }
 
 type deleteMembersRequest struct {
-	//IDs util.UUIDs `query:"ids" json:"ids" validate:"required"`
 	IDs string `query:"ids" json:"ids" validate:"required"`
 }
 
@@ -253,20 +252,36 @@ func (server *Server) deleteMembers(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
 	}
 
-	var IDs []uuid.UUID
-	strIDs := strings.Split(req.IDs, ",")
-	for _, strID := range strIDs {
-		ID, err := uuid.Parse(strID)
-		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
-		}
-		IDs = append(IDs, ID)
+	IDs, err := memberIDsFromCommaSeparatedString(req.IDs)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
 	}
 
-	err := server.store.DeleteMembers(c.Context(), IDs)
+	err = server.store.DeleteMembers(c.Context(), IDs)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
 	}
 
 	return c.Status(fiber.StatusNoContent).JSON(nil)
+}
+
+func memberIDsFromCommaSeparatedString(commaSeparatedString string) ([]uuid.UUID, error) {
+	var IDs []uuid.UUID
+	strIDs := strings.Split(commaSeparatedString, ",")
+	for _, strID := range strIDs {
+		ID, err := uuid.Parse(strID)
+		if err != nil {
+			return nil, err
+		}
+		IDs = append(IDs, ID)
+	}
+	return IDs, nil
+}
+
+func memberIDsToCommaSeparatedString(IDs []uuid.UUID) string {
+	IDStrings := make([]string, 0, len(IDs))
+	for _, ID := range IDs {
+		IDStrings = append(IDStrings, ID.String())
+	}
+	return strings.Join(IDStrings, ",")
 }

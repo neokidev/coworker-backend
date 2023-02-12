@@ -316,6 +316,67 @@ func TestDeleteMemberAPI(t *testing.T) {
 	}
 }
 
+func TestDeleteMembersAPI(t *testing.T) {
+	member1 := randomMember()
+	member2 := randomMember()
+	memberIDs := []uuid.UUID{member1.ID, member2.ID}
+
+	type Query struct {
+		IDs string
+	}
+
+	testCases := []struct {
+		name          string
+		query         Query
+		buildStubs    func(store *mockdb.MockStore)
+		checkResponse func(t *testing.T, response *http.Response)
+	}{
+		{
+			name: "OK",
+			query: Query{
+				IDs: memberIDsToCommaSeparatedString(memberIDs),
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					DeleteMembers(gomock.Any(), gomock.Eq(memberIDs)).
+					Times(1).
+					Return(nil)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusNoContent, response.StatusCode)
+			},
+		},
+		// TODO: add more cases
+	}
+
+	for i := range testCases {
+		tc := testCases[i]
+
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			store := mockdb.NewMockStore(ctrl)
+			tc.buildStubs(store)
+
+			// start test server and send request
+			server := NewServer(store)
+
+			url := "/api/v1/members"
+			request, err := http.NewRequest(http.MethodDelete, url, nil)
+			require.NoError(t, err)
+
+			// Add query parameters to request URL
+			q := request.URL.Query()
+			q.Add("ids", fmt.Sprintf("%s", tc.query.IDs))
+			request.URL.RawQuery = q.Encode()
+
+			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
+			tc.checkResponse(t, response)
+		})
+	}
+}
+
 func randomMember() db.Member {
 	return db.Member{
 		ID:        util.RandomUUID(),
