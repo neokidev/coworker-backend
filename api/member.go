@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	db "github.com/ot07/coworker-backend/db/sqlc"
+	"strings"
 	"time"
 )
 
@@ -222,6 +223,47 @@ func (server *Server) deleteMember(c *fiber.Ctx) error {
 	}
 
 	err := server.store.DeleteMember(c.Context(), req.ID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
+	}
+
+	return c.Status(fiber.StatusNoContent).JSON(nil)
+}
+
+type deleteMembersRequest struct {
+	//IDs util.UUIDs `query:"ids" json:"ids" validate:"required"`
+	IDs string `query:"ids" json:"ids" validate:"required"`
+}
+
+// @Summary      Delete members
+// @Tags         members
+// @Param        query query listMembersRequest true "query"
+// @Success      204 {object} nil
+// @Failure      400 {object} errorResponse
+// @Failure      500 {object} errorResponse
+// @Router       /members [delete]
+func (server *Server) deleteMembers(c *fiber.Ctx) error {
+	req := new(deleteMembersRequest)
+
+	if err := c.QueryParser(req); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
+	}
+
+	if err := validate.Struct(req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
+	}
+
+	var IDs []uuid.UUID
+	strIDs := strings.Split(req.IDs, ",")
+	for _, strID := range strIDs {
+		ID, err := uuid.Parse(strID)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
+		}
+		IDs = append(IDs, ID)
+	}
+
+	err := server.store.DeleteMembers(c.Context(), IDs)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
 	}
