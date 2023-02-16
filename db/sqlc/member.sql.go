@@ -103,7 +103,7 @@ func (q *Queries) ListMembers(ctx context.Context, arg ListMembersParams) ([]Mem
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Member
+	items := []Member{}
 	for rows.Next() {
 		var i Member
 		if err := rows.Scan(
