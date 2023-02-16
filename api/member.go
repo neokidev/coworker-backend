@@ -107,7 +107,7 @@ type listMembersRequest struct {
 type membersResponse []memberResponse
 
 func newMembersResponse(members []db.Member) membersResponse {
-	var rsp []memberResponse
+	rsp := make(membersResponse, 0, len(members))
 	for _, member := range members {
 		rsp = append(rsp, newMemberResponse(member))
 	}
