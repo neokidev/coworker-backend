@@ -13,6 +13,17 @@ import (
 	"github.com/lib/pq"
 )
 
+const countMembers = `-- name: CountMembers :one
+SELECT count(*) FROM members
+`
+
+func (q *Queries) CountMembers(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countMembers)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createMember = `-- name: CreateMember :one
 INSERT INTO members (
   id, first_name, last_name, email

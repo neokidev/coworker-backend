@@ -167,10 +167,15 @@ func TestListMembersAPI(t *testing.T) {
 					ListMembers(gomock.Any(), gomock.Eq(arg)).
 					Times(1).
 					Return(members, nil)
+
+				store.EXPECT().
+					CountMembers(gomock.Any()).
+					Times(1).
+					Return(int64(len(members)), nil)
 			},
 			checkResponse: func(t *testing.T, response *http.Response) {
 				require.Equal(t, http.StatusOK, response.StatusCode)
-				requireBodyMatchMembers(t, response.Body, members)
+				checkListMembersResponse(t, response.Body, members, 1, int32(n), 1, int64(n))
 			},
 		},
 	}
@@ -400,14 +405,20 @@ func requireBodyMatchMember(t *testing.T, body io.ReadCloser, member db.Member) 
 	require.NoError(t, err)
 }
 
-func requireBodyMatchMembers(t *testing.T, body io.ReadCloser, members []db.Member) {
+func checkListMembersResponse(t *testing.T, body io.ReadCloser, members []db.Member, pageID int32, pageSize int32, pageCount int64, totalCount int64) {
 	data, err := io.ReadAll(body)
 	require.NoError(t, err)
 
-	var gotMembers []memberResponse
-	err = json.Unmarshal(data, &gotMembers)
+	var gotResponse listMembersResponse
+	err = json.Unmarshal(data, &gotResponse)
 	require.NoError(t, err)
 
+	require.Equal(t, pageID, gotResponse.Meta.PageID)
+	require.Equal(t, pageSize, gotResponse.Meta.PageSize)
+	require.Equal(t, pageCount, gotResponse.Meta.PageCount)
+	require.Equal(t, totalCount, gotResponse.Meta.TotalCount)
+
+	gotMembers := gotResponse.Data
 	require.Equal(t, len(members), len(gotMembers))
 	for i := 0; i < len(members); i++ {
 		requireMemberResponseMatchMember(t, gotMembers[i], members[i])

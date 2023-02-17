@@ -36,6 +36,21 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
+// CountMembers mocks base method.
+func (m *MockStore) CountMembers(arg0 context.Context) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountMembers", arg0)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountMembers indicates an expected call of CountMembers.
+func (mr *MockStoreMockRecorder) CountMembers(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountMembers", reflect.TypeOf((*MockStore)(nil).CountMembers), arg0)
+}
+
 // CreateMember mocks base method.
 func (m *MockStore) CreateMember(arg0 context.Context, arg1 db.CreateMemberParams) (db.Member, error) {
 	m.ctrl.T.Helper()
