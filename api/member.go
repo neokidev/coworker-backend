@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	db "github.com/ot07/coworker-backend/db/sqlc"
+	"math"
 	"strings"
 	"time"
 )
@@ -114,10 +115,22 @@ func newMembersResponse(members []db.Member) membersResponse {
 	return rsp
 }
 
+type listMembersResponseMeta struct {
+	PageID     int32 `json:"page_id"`
+	PageSize   int32 `json:"page_size"`
+	PageCount  int64 `json:"page_count"`
+	TotalCount int64 `json:"total_count"`
+}
+
+type listMembersResponse struct {
+	Meta listMembersResponseMeta `json:"meta"`
+	Data membersResponse         `json:"data"`
+}
+
 // @Summary      List members
 // @Tags         members
 // @Param        query query listMembersRequest true "query"
-// @Success      200 {object} membersResponse
+// @Success      200 {object} listMembersResponse
 // @Failure      400 {object} errorResponse
 // @Failure      500 {object} errorResponse
 // @Router       /members [get]
@@ -142,7 +155,18 @@ func (server *Server) listMembers(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
 	}
 
-	rsp := newMembersResponse(members)
+	totalCount, err := server.store.CountMembers(c.Context())
+	pageCount := int64(math.Ceil(float64(totalCount) / float64(req.PageSize)))
+
+	rsp := listMembersResponse{
+		Meta: listMembersResponseMeta{
+			PageID:     req.PageID,
+			PageSize:   req.PageSize,
+			PageCount:  pageCount,
+			TotalCount: totalCount,
+		},
+		Data: newMembersResponse(members),
+	}
 	return c.Status(fiber.StatusOK).JSON(rsp)
 }
 

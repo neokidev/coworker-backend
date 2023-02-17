@@ -22,6 +22,26 @@ definitions:
       error:
         type: string
     type: object
+  api.listMembersResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/api.memberResponse'
+        type: array
+      meta:
+        $ref: '#/definitions/api.listMembersResponseMeta'
+    type: object
+  api.listMembersResponseMeta:
+    properties:
+      page_count:
+        type: integer
+      page_id:
+        type: integer
+      page_size:
+        type: integer
+      total_count:
+        type: integer
+    type: object
   api.memberResponse:
     properties:
       created_at:
@@ -88,9 +108,7 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/api.memberResponse'
-            type: array
+            $ref: '#/definitions/api.listMembersResponse'
         "400":
           description: Bad Request
           schema:

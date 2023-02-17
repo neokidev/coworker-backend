@@ -42,10 +42,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.memberResponse"
-                            }
+                            "$ref": "#/definitions/api.listMembersResponse"
                         }
                     },
                     "400": {
@@ -275,6 +272,37 @@ const docTemplate = `{
             "properties": {
                 "error": {
                     "type": "string"
+                }
+            }
+        },
+        "api.listMembersResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.memberResponse"
+                    }
+                },
+                "meta": {
+                    "$ref": "#/definitions/api.listMembersResponseMeta"
+                }
+            }
+        },
+        "api.listMembersResponseMeta": {
+            "type": "object",
+            "properties": {
+                "page_count": {
+                    "type": "integer"
+                },
+                "page_id": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total_count": {
+                    "type": "integer"
                 }
             }
         },
