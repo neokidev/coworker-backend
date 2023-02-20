@@ -23,13 +23,13 @@ func TestGetMemberAPI(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		memberID      uuid.UUID
+		memberID      string
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, response *http.Response)
 	}{
 		{
 			name:     "OK",
-			memberID: member.ID,
+			memberID: member.ID.String(),
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetMember(gomock.Any(), gomock.Eq(member.ID)).
@@ -41,7 +41,44 @@ func TestGetMemberAPI(t *testing.T) {
 				requireBodyMatchMember(t, response.Body, member)
 			},
 		},
-		// TODO: add more cases
+		{
+			name:     "NotFound",
+			memberID: member.ID.String(),
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetMember(gomock.Any(), gomock.Eq(member.ID)).
+					Times(1).
+					Return(db.Member{}, sql.ErrNoRows)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusNotFound, response.StatusCode)
+			},
+		},
+		{
+			name:     "InternalError",
+			memberID: member.ID.String(),
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetMember(gomock.Any(), gomock.Eq(member.ID)).
+					Times(1).
+					Return(db.Member{}, sql.ErrConnDone)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusInternalServerError, response.StatusCode)
+			},
+		},
+		{
+			name:     "InvalidID",
+			memberID: "InvalidID",
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetMember(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
 	}
 
 	for i := range testCases {
@@ -57,7 +94,7 @@ func TestGetMemberAPI(t *testing.T) {
 			// start test server and send request
 			server := NewServer(store)
 
-			url := fmt.Sprintf("/api/v1/members/%s", member.ID)
+			url := fmt.Sprintf("/api/v1/members/%s", tc.memberID)
 			request, err := http.NewRequest(http.MethodGet, url, nil)
 			require.NoError(t, err)
 

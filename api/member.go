@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	_ "database/sql"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -68,7 +69,7 @@ func (server *Server) createMember(c *fiber.Ctx) error {
 }
 
 type getMemberRequest struct {
-	ID uuid.UUID `params:"id" validate:"required"`
+	ID uuid.UUID `params:"id"`
 }
 
 // @Summary      Get member
@@ -82,15 +83,15 @@ func (server *Server) getMember(c *fiber.Ctx) error {
 	req := new(getMemberRequest)
 
 	if err := c.ParamsParser(req); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
-	}
-
-	if err := validate.Struct(req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
 	}
 
 	member, err := server.store.GetMember(c.Context(), req.ID)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return c.Status(fiber.StatusNotFound).JSON(newErrorResponse(err))
+		}
+
 		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
 	}
 
