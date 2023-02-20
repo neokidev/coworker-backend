@@ -42,10 +42,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.memberResponse"
-                            }
+                            "$ref": "#/definitions/api.listMembersResponse"
                         }
                     },
                     "400": {
@@ -84,6 +81,37 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/api.memberResponse"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "members"
+                ],
+                "summary": "Delete members",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "ids",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -244,6 +272,37 @@ const docTemplate = `{
             "properties": {
                 "error": {
                     "type": "string"
+                }
+            }
+        },
+        "api.listMembersResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.memberResponse"
+                    }
+                },
+                "meta": {
+                    "$ref": "#/definitions/api.listMembersResponseMeta"
+                }
+            }
+        },
+        "api.listMembersResponseMeta": {
+            "type": "object",
+            "properties": {
+                "page_count": {
+                    "type": "integer"
+                },
+                "page_id": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total_count": {
+                    "type": "integer"
                 }
             }
         },

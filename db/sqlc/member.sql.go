@@ -10,7 +10,19 @@ import (
 	"database/sql"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
+
+const countMembers = `-- name: CountMembers :one
+SELECT count(*) FROM members
+`
+
+func (q *Queries) CountMembers(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countMembers)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
 
 const createMember = `-- name: CreateMember :one
 INSERT INTO members (
@@ -56,6 +68,16 @@ func (q *Queries) DeleteMember(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const deleteMembers = `-- name: DeleteMembers :exec
+DELETE FROM members
+WHERE id = ANY($1::uuid[])
+`
+
+func (q *Queries) DeleteMembers(ctx context.Context, dollar_1 []uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteMembers, pq.Array(dollar_1))
+	return err
+}
+
 const getMember = `-- name: GetMember :one
 SELECT id, first_name, last_name, email, created_at FROM members
 WHERE id = $1 LIMIT 1
@@ -92,7 +114,7 @@ func (q *Queries) ListMembers(ctx context.Context, arg ListMembersParams) ([]Mem
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Member
+	items := []Member{}
 	for rows.Next() {
 		var i Member
 		if err := rows.Scan(

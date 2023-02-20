@@ -204,10 +204,15 @@ func TestListMembersAPI(t *testing.T) {
 					ListMembers(gomock.Any(), gomock.Eq(arg)).
 					Times(1).
 					Return(members, nil)
+
+				store.EXPECT().
+					CountMembers(gomock.Any()).
+					Times(1).
+					Return(int64(len(members)), nil)
 			},
 			checkResponse: func(t *testing.T, response *http.Response) {
 				require.Equal(t, http.StatusOK, response.StatusCode)
-				requireBodyMatchMembers(t, response.Body, members)
+				checkListMembersResponse(t, response.Body, members, 1, int32(n), 1, int64(n))
 			},
 		},
 	}
@@ -353,6 +358,67 @@ func TestDeleteMemberAPI(t *testing.T) {
 	}
 }
 
+func TestDeleteMembersAPI(t *testing.T) {
+	member1 := randomMember()
+	member2 := randomMember()
+	memberIDs := []uuid.UUID{member1.ID, member2.ID}
+
+	type Query struct {
+		IDs string
+	}
+
+	testCases := []struct {
+		name          string
+		query         Query
+		buildStubs    func(store *mockdb.MockStore)
+		checkResponse func(t *testing.T, response *http.Response)
+	}{
+		{
+			name: "OK",
+			query: Query{
+				IDs: memberIDsToCommaSeparatedString(memberIDs),
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					DeleteMembers(gomock.Any(), gomock.Eq(memberIDs)).
+					Times(1).
+					Return(nil)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusNoContent, response.StatusCode)
+			},
+		},
+		// TODO: add more cases
+	}
+
+	for i := range testCases {
+		tc := testCases[i]
+
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			store := mockdb.NewMockStore(ctrl)
+			tc.buildStubs(store)
+
+			// start test server and send request
+			server := NewServer(store)
+
+			url := "/api/v1/members"
+			request, err := http.NewRequest(http.MethodDelete, url, nil)
+			require.NoError(t, err)
+
+			// Add query parameters to request URL
+			q := request.URL.Query()
+			q.Add("ids", fmt.Sprintf("%s", tc.query.IDs))
+			request.URL.RawQuery = q.Encode()
+
+			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
+			tc.checkResponse(t, response)
+		})
+	}
+}
+
 func randomMember() db.Member {
 	return db.Member{
 		ID:        util.RandomUUID(),
@@ -376,14 +442,20 @@ func requireBodyMatchMember(t *testing.T, body io.ReadCloser, member db.Member) 
 	require.NoError(t, err)
 }
 
-func requireBodyMatchMembers(t *testing.T, body io.ReadCloser, members []db.Member) {
+func checkListMembersResponse(t *testing.T, body io.ReadCloser, members []db.Member, pageID int32, pageSize int32, pageCount int64, totalCount int64) {
 	data, err := io.ReadAll(body)
 	require.NoError(t, err)
 
-	var gotMembers []memberResponse
-	err = json.Unmarshal(data, &gotMembers)
+	var gotResponse listMembersResponse
+	err = json.Unmarshal(data, &gotResponse)
 	require.NoError(t, err)
 
+	require.Equal(t, pageID, gotResponse.Meta.PageID)
+	require.Equal(t, pageSize, gotResponse.Meta.PageSize)
+	require.Equal(t, pageCount, gotResponse.Meta.PageCount)
+	require.Equal(t, totalCount, gotResponse.Meta.TotalCount)
+
+	gotMembers := gotResponse.Data
 	require.Equal(t, len(members), len(gotMembers))
 	for i := 0; i < len(members); i++ {
 		requireMemberResponseMatchMember(t, gotMembers[i], members[i])

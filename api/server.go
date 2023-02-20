@@ -31,6 +31,7 @@ func NewServer(store db.Store) *Server {
 	v1.Get("/members", server.listMembers)
 	v1.Put("/members/:id", server.updateMember)
 	v1.Delete("/members/:id", server.deleteMember)
+	v1.Delete("/members", server.deleteMembers)
 
 	app.Get("/swagger/*", swagger.HandlerDefault)
 

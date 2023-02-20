@@ -96,3 +96,20 @@ func TestDeleteMember(t *testing.T) {
 	require.EqualError(t, err, sql.ErrNoRows.Error())
 	require.Empty(t, member2)
 }
+
+func TestDeleteMembers(t *testing.T) {
+	member1 := createRandomMember(t)
+	member2 := createRandomMember(t)
+	err := testQueries.DeleteMembers(context.Background(), []uuid.UUID{member1.ID, member2.ID})
+	require.NoError(t, err)
+
+	member3, err := testQueries.GetMember(context.Background(), member1.ID)
+	require.Error(t, err)
+	require.EqualError(t, err, sql.ErrNoRows.Error())
+	require.Empty(t, member3)
+
+	member4, err := testQueries.GetMember(context.Background(), member2.ID)
+	require.Error(t, err)
+	require.EqualError(t, err, sql.ErrNoRows.Error())
+	require.Empty(t, member4)
+}

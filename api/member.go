@@ -6,6 +6,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	db "github.com/ot07/coworker-backend/db/sqlc"
+	"math"
+	"strings"
 	"time"
 )
 
@@ -107,17 +109,29 @@ type listMembersRequest struct {
 type membersResponse []memberResponse
 
 func newMembersResponse(members []db.Member) membersResponse {
-	var rsp []memberResponse
+	rsp := make(membersResponse, 0, len(members))
 	for _, member := range members {
 		rsp = append(rsp, newMemberResponse(member))
 	}
 	return rsp
 }
 
+type listMembersResponseMeta struct {
+	PageID     int32 `json:"page_id"`
+	PageSize   int32 `json:"page_size"`
+	PageCount  int64 `json:"page_count"`
+	TotalCount int64 `json:"total_count"`
+}
+
+type listMembersResponse struct {
+	Meta listMembersResponseMeta `json:"meta"`
+	Data membersResponse         `json:"data"`
+}
+
 // @Summary      List members
 // @Tags         members
 // @Param        query query listMembersRequest true "query"
-// @Success      200 {object} membersResponse
+// @Success      200 {object} listMembersResponse
 // @Failure      400 {object} errorResponse
 // @Failure      500 {object} errorResponse
 // @Router       /members [get]
@@ -142,7 +156,18 @@ func (server *Server) listMembers(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
 	}
 
-	rsp := newMembersResponse(members)
+	totalCount, err := server.store.CountMembers(c.Context())
+	pageCount := int64(math.Ceil(float64(totalCount) / float64(req.PageSize)))
+
+	rsp := listMembersResponse{
+		Meta: listMembersResponseMeta{
+			PageID:     req.PageID,
+			PageSize:   req.PageSize,
+			PageCount:  pageCount,
+			TotalCount: totalCount,
+		},
+		Data: newMembersResponse(members),
+	}
 	return c.Status(fiber.StatusOK).JSON(rsp)
 }
 
@@ -228,4 +253,60 @@ func (server *Server) deleteMember(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusNoContent).JSON(nil)
+}
+
+type deleteMembersRequest struct {
+	IDs string `query:"ids" json:"ids" validate:"required"`
+}
+
+// @Summary      Delete members
+// @Tags         members
+// @Param        query query deleteMembersRequest true "query"
+// @Success      204 {object} nil
+// @Failure      400 {object} errorResponse
+// @Failure      500 {object} errorResponse
+// @Router       /members [delete]
+func (server *Server) deleteMembers(c *fiber.Ctx) error {
+	req := new(deleteMembersRequest)
+
+	if err := c.QueryParser(req); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
+	}
+
+	if err := validate.Struct(req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
+	}
+
+	IDs, err := memberIDsFromCommaSeparatedString(req.IDs)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
+	}
+
+	err = server.store.DeleteMembers(c.Context(), IDs)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
+	}
+
+	return c.Status(fiber.StatusNoContent).JSON(nil)
+}
+
+func memberIDsFromCommaSeparatedString(commaSeparatedString string) ([]uuid.UUID, error) {
+	var IDs []uuid.UUID
+	strIDs := strings.Split(commaSeparatedString, ",")
+	for _, strID := range strIDs {
+		ID, err := uuid.Parse(strID)
+		if err != nil {
+			return nil, err
+		}
+		IDs = append(IDs, ID)
+	}
+	return IDs, nil
+}
+
+func memberIDsToCommaSeparatedString(IDs []uuid.UUID) string {
+	IDStrings := make([]string, 0, len(IDs))
+	for _, ID := range IDs {
+		IDStrings = append(IDStrings, ID.String())
+	}
+	return strings.Join(IDStrings, ",")
 }
