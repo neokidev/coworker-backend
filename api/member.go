@@ -15,7 +15,7 @@ type createMemberRequest struct {
 	ID        uuid.UUID     `json:"id" validate:"required" format:"uuid"`
 	FirstName string        `json:"first_name" validate:"required"`
 	LastName  string        `json:"last_name" validate:"required"`
-	Email     db.NullString `json:"email" validate:"email" swaggertype:"string" format:"email"`
+	Email     db.NullString `json:"email" validate:"nullable_email" swaggertype:"string" format:"email"`
 }
 
 type memberResponse struct {
@@ -47,7 +47,7 @@ func (server *Server) createMember(c *fiber.Ctx) error {
 	req := new(createMemberRequest)
 
 	if err := c.BodyParser(req); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
+		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
 	}
 
 	if err := validate.Struct(req); err != nil {

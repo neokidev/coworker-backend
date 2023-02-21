@@ -139,6 +139,120 @@ func TestCreateMemberAPI(t *testing.T) {
 				requireBodyMatchMember(t, response.Body, member)
 			},
 		},
+		{
+			name: "OptionalFieldsNotFound",
+			body: fiber.Map{
+				"id":         member.ID,
+				"first_name": member.FirstName,
+				"last_name":  member.LastName,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				arg := db.CreateMemberParams{
+					ID:        member.ID,
+					FirstName: member.FirstName,
+					LastName:  member.LastName,
+				}
+
+				store.EXPECT().
+					CreateMember(gomock.Any(), gomock.Eq(arg)).
+					Times(1).
+					Return(member, nil)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusOK, response.StatusCode)
+				requireBodyMatchMember(t, response.Body, member)
+			},
+		},
+		{
+			name: "IDNotFound",
+			body: fiber.Map{
+				"first_name": member.FirstName,
+				"last_name":  member.LastName,
+				"email":      member.Email.String,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					CreateMember(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
+		{
+			name: "FirstNameNotFound",
+			body: fiber.Map{
+				"id":        member.ID,
+				"last_name": member.LastName,
+				"email":     member.Email.String,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					CreateMember(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
+		{
+			name: "LastNameNotFound",
+			body: fiber.Map{
+				"id":         member.ID,
+				"first_name": member.FirstName,
+				"email":      member.Email.String,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					CreateMember(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
+		{
+			name: "InvalidEmail",
+			body: fiber.Map{
+				"id":         member.ID,
+				"first_name": member.FirstName,
+				"last_name":  member.LastName,
+				"email":      "InvalidEmail",
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					CreateMember(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
+		{
+			name: "CreateMemberError",
+			body: fiber.Map{
+				"id":         member.ID,
+				"first_name": member.FirstName,
+				"last_name":  member.LastName,
+				"email":      member.Email.String,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				arg := db.CreateMemberParams{
+					ID:        member.ID,
+					FirstName: member.FirstName,
+					LastName:  member.LastName,
+					Email:     member.Email,
+				}
+
+				store.EXPECT().
+					CreateMember(gomock.Any(), gomock.Eq(arg)).
+					Times(1).
+					Return(db.Member{}, sql.ErrConnDone)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusInternalServerError, response.StatusCode)
+			},
+		},
 	}
 
 	for i := range testCases {

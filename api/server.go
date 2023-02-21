@@ -1,14 +1,11 @@
 package api
 
 import (
-	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/swagger"
 	db "github.com/ot07/coworker-backend/db/sqlc"
 )
-
-var validate = validator.New()
 
 // Server serves HTTP requests for this app service.
 type Server struct {
@@ -18,6 +15,8 @@ type Server struct {
 
 // NewServer creates a new HTTP server and setup routing.
 func NewServer(store db.Store) *Server {
+	registerAdditionalValidations()
+
 	app := fiber.New()
 	app.Use(cors.New())
 
