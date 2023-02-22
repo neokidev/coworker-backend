@@ -15,8 +15,6 @@ type Server struct {
 
 // NewServer creates a new HTTP server and setup routing.
 func NewServer(store db.Store) *Server {
-	registerAdditionalValidations()
-
 	app := fiber.New()
 	app.Use(cors.New())
 

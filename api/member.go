@@ -12,10 +12,10 @@ import (
 )
 
 type createMemberRequest struct {
-	ID        uuid.UUID     `json:"id" validate:"required" format:"uuid"`
-	FirstName string        `json:"first_name" validate:"required"`
-	LastName  string        `json:"last_name" validate:"required"`
-	Email     db.NullString `json:"email" validate:"nullable_email" swaggertype:"string" format:"email"`
+	ID        uuid.UUID `json:"id" validate:"required" format:"uuid"`
+	FirstName string    `json:"first_name" validate:"required"`
+	LastName  string    `json:"last_name" validate:"required"`
+	Email     string    `json:"email" validate:"omitempty,email" swaggertype:"string" format:"email"`
 }
 
 type memberResponse struct {
@@ -50,6 +50,7 @@ func (server *Server) createMember(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
 	}
 
+	validate := newValidator()
 	if err := validate.Struct(req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
 	}
@@ -58,7 +59,7 @@ func (server *Server) createMember(c *fiber.Ctx) error {
 		ID:        req.ID,
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
-		Email:     req.Email.NullString,
+		Email:     sql.NullString{String: req.Email, Valid: len(req.Email) > 0},
 	}
 
 	member, err := server.store.CreateMember(c.Context(), arg)
@@ -142,6 +143,7 @@ func (server *Server) listMembers(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
 	}
 
+	validate := newValidator()
 	if err := validate.Struct(req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
 	}
@@ -196,6 +198,7 @@ func (server *Server) updateMember(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
 	}
 
+	validate := newValidator()
 	if err := validate.Struct(params); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
 	}
@@ -243,6 +246,7 @@ func (server *Server) deleteMember(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
 	}
 
+	validate := newValidator()
 	if err := validate.Struct(req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
 	}
@@ -273,6 +277,7 @@ func (server *Server) deleteMembers(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
 	}
 
+	validate := newValidator()
 	if err := validate.Struct(req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
 	}
