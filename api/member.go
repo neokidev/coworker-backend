@@ -140,7 +140,7 @@ func (server *Server) listMembers(c *fiber.Ctx) error {
 	req := new(listMembersRequest)
 
 	if err := c.QueryParser(req); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
+		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
 	}
 
 	validate := newValidator()
@@ -159,6 +159,10 @@ func (server *Server) listMembers(c *fiber.Ctx) error {
 	}
 
 	totalCount, err := server.store.CountMembers(c.Context())
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
+	}
+
 	pageCount := int64(math.Ceil(float64(totalCount) / float64(req.PageSize)))
 
 	rsp := listMembersResponse{

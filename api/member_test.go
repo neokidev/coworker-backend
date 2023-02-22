@@ -329,6 +329,150 @@ func TestListMembersAPI(t *testing.T) {
 				checkListMembersResponse(t, response.Body, members, 1, int32(n), 1, int64(n))
 			},
 		},
+		{
+			name: "PageIDNotFound",
+			query: Query{
+				pageSize: n,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					ListMembers(gomock.Any(), gomock.Any()).
+					Times(0)
+
+				store.EXPECT().
+					CountMembers(gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
+		{
+			name: "PageIDLessThanLowerLimit",
+			query: Query{
+				pageID:   0,
+				pageSize: n,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					ListMembers(gomock.Any(), gomock.Any()).
+					Times(0)
+
+				store.EXPECT().
+					CountMembers(gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
+		{
+			name: "PageSizeNotFound",
+			query: Query{
+				pageID: 1,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					ListMembers(gomock.Any(), gomock.Any()).
+					Times(0)
+
+				store.EXPECT().
+					CountMembers(gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
+		{
+			name: "PageSizeLessThanLowerLimit",
+			query: Query{
+				pageID:   1,
+				pageSize: 4,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					ListMembers(gomock.Any(), gomock.Any()).
+					Times(0)
+
+				store.EXPECT().
+					CountMembers(gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
+		{
+			name: "PageSizeMoreThanUpperLimit",
+			query: Query{
+				pageID:   1,
+				pageSize: 11,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					ListMembers(gomock.Any(), gomock.Any()).
+					Times(0)
+
+				store.EXPECT().
+					CountMembers(gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
+		{
+			name: "ListMembersError",
+			query: Query{
+				pageID:   1,
+				pageSize: n,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				arg := db.ListMembersParams{
+					Limit:  int32(n),
+					Offset: 0,
+				}
+
+				store.EXPECT().
+					ListMembers(gomock.Any(), gomock.Eq(arg)).
+					Times(1).
+					Return([]db.Member{}, sql.ErrConnDone)
+
+				store.EXPECT().
+					CountMembers(gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusInternalServerError, response.StatusCode)
+			},
+		},
+		{
+			name: "CountMembersError",
+			query: Query{
+				pageID:   1,
+				pageSize: n,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				arg := db.ListMembersParams{
+					Limit:  int32(n),
+					Offset: 0,
+				}
+
+				store.EXPECT().
+					ListMembers(gomock.Any(), gomock.Eq(arg)).
+					Times(1).
+					Return(members, nil)
+
+				store.EXPECT().
+					CountMembers(gomock.Any()).
+					Times(1).
+					Return(int64(0), sql.ErrConnDone)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusInternalServerError, response.StatusCode)
+			},
+		},
 	}
 
 	for i := range testCases {
