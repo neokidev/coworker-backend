@@ -275,7 +275,7 @@ func (server *Server) deleteMembers(c *fiber.Ctx) error {
 	req := new(deleteMembersRequest)
 
 	if err := c.QueryParser(req); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
+		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
 	}
 
 	validate := newValidator()

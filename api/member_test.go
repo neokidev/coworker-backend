@@ -741,7 +741,32 @@ func TestDeleteMembersAPI(t *testing.T) {
 				require.Equal(t, http.StatusNoContent, response.StatusCode)
 			},
 		},
-		// TODO: add more cases
+		{
+			name:  "IDsNotFound",
+			query: Query{},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					DeleteMembers(gomock.Any(), gomock.Eq(memberIDs)).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
+		{
+			name: "InvalidIDs",
+			query: Query{
+				IDs: memberIDsToCommaSeparatedString(memberIDs) + ",InvalidID",
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					DeleteMembers(gomock.Any(), gomock.Eq(memberIDs)).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
 	}
 
 	for i := range testCases {
