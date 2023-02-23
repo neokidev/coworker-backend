@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func createRandomMember(t *testing.T) Member {
+func createRandomMember(t *testing.T, testQueries *Queries) Member {
 	arg := CreateMemberParams{
 		ID:        uuid.New(),
 		FirstName: util.RandomName(),
@@ -32,12 +32,38 @@ func createRandomMember(t *testing.T) Member {
 	return member
 }
 
-func TestCreateMember(t *testing.T) {
-	createRandomMember(t)
+func (s *DatabaseTestSuite) TestCreateMember() {
+	t := s.T()
+	t.Parallel()
+
+	tx, err := testDB.Begin()
+	require.NoError(t, err)
+
+	defer func(tx *sql.Tx) {
+		err = tx.Rollback()
+		require.NoError(t, err)
+	}(tx)
+
+	testQueries := New(tx)
+
+	createRandomMember(t, testQueries)
 }
 
-func TestGetMember(t *testing.T) {
-	member1 := createRandomMember(t)
+func (s *DatabaseTestSuite) TestGetMember() {
+	t := s.T()
+	t.Parallel()
+
+	tx, err := testDB.Begin()
+	require.NoError(t, err)
+
+	defer func(tx *sql.Tx) {
+		err = tx.Rollback()
+		require.NoError(t, err)
+	}(tx)
+
+	testQueries := New(tx)
+
+	member1 := createRandomMember(t, testQueries)
 	member2, err := testQueries.GetMember(context.Background(), member1.ID)
 	require.NoError(t, err)
 	require.NotEmpty(t, member2)
@@ -49,9 +75,22 @@ func TestGetMember(t *testing.T) {
 	require.WithinDuration(t, member1.CreatedAt, member2.CreatedAt, time.Second)
 }
 
-func TestListMember(t *testing.T) {
+func (s *DatabaseTestSuite) TestListMember() {
+	t := s.T()
+	t.Parallel()
+
+	tx, err := testDB.Begin()
+	require.NoError(t, err)
+
+	defer func(tx *sql.Tx) {
+		err = tx.Rollback()
+		require.NoError(t, err)
+	}(tx)
+
+	testQueries := New(tx)
+
 	for i := 0; i < 10; i++ {
-		createRandomMember(t)
+		createRandomMember(t, testQueries)
 	}
 
 	arg := ListMembersParams{Limit: 5, Offset: 5}
@@ -65,9 +104,21 @@ func TestListMember(t *testing.T) {
 	}
 }
 
-func TestUpdateMemberAllFields(t *testing.T) {
-	oldMember := createRandomMember(t)
+func (s *DatabaseTestSuite) TestUpdateMemberAllFields() {
+	t := s.T()
+	t.Parallel()
 
+	tx, err := testDB.Begin()
+	require.NoError(t, err)
+
+	defer func(tx *sql.Tx) {
+		err = tx.Rollback()
+		require.NoError(t, err)
+	}(tx)
+
+	testQueries := New(tx)
+
+	oldMember := createRandomMember(t, testQueries)
 	newFirstName := util.RandomName()
 	newLastName := util.RandomName()
 	newEmail := util.RandomEmail()
@@ -93,8 +144,21 @@ func TestUpdateMemberAllFields(t *testing.T) {
 	require.WithinDuration(t, oldMember.CreatedAt, updatedMember.CreatedAt, time.Second)
 }
 
-func TestUpdateMemberOnlyFirstName(t *testing.T) {
-	oldMember := createRandomMember(t)
+func (s *DatabaseTestSuite) TestUpdateMemberOnlyFirstName() {
+	t := s.T()
+	t.Parallel()
+
+	tx, err := testDB.Begin()
+	require.NoError(t, err)
+
+	defer func(tx *sql.Tx) {
+		err = tx.Rollback()
+		require.NoError(t, err)
+	}(tx)
+
+	testQueries := New(tx)
+
+	oldMember := createRandomMember(t, testQueries)
 	newFirstName := util.RandomName()
 
 	arg := UpdateMemberParams{
@@ -116,9 +180,21 @@ func TestUpdateMemberOnlyFirstName(t *testing.T) {
 	require.WithinDuration(t, oldMember.CreatedAt, updatedMember.CreatedAt, time.Second)
 }
 
-func TestUpdateMemberOnlyLastName(t *testing.T) {
-	oldMember := createRandomMember(t)
+func (s *DatabaseTestSuite) TestUpdateMemberOnlyLastName() {
+	t := s.T()
+	t.Parallel()
 
+	tx, err := testDB.Begin()
+	require.NoError(t, err)
+
+	defer func(tx *sql.Tx) {
+		err = tx.Rollback()
+		require.NoError(t, err)
+	}(tx)
+
+	testQueries := New(tx)
+
+	oldMember := createRandomMember(t, testQueries)
 	newLastName := util.RandomName()
 
 	arg := UpdateMemberParams{
@@ -140,9 +216,21 @@ func TestUpdateMemberOnlyLastName(t *testing.T) {
 	require.WithinDuration(t, oldMember.CreatedAt, updatedMember.CreatedAt, time.Second)
 }
 
-func TestUpdateMemberOnlyEmail(t *testing.T) {
-	oldMember := createRandomMember(t)
+func (s *DatabaseTestSuite) TestUpdateMemberOnlyEmail() {
+	t := s.T()
+	t.Parallel()
 
+	tx, err := testDB.Begin()
+	require.NoError(t, err)
+
+	defer func(tx *sql.Tx) {
+		err = tx.Rollback()
+		require.NoError(t, err)
+	}(tx)
+
+	testQueries := New(tx)
+
+	oldMember := createRandomMember(t, testQueries)
 	newEmail := util.RandomEmail()
 
 	arg := UpdateMemberParams{
@@ -164,9 +252,22 @@ func TestUpdateMemberOnlyEmail(t *testing.T) {
 	require.WithinDuration(t, oldMember.CreatedAt, updatedMember.CreatedAt, time.Second)
 }
 
-func TestDeleteMember(t *testing.T) {
-	member1 := createRandomMember(t)
-	err := testQueries.DeleteMember(context.Background(), member1.ID)
+func (s *DatabaseTestSuite) TestDeleteMember() {
+	t := s.T()
+	t.Parallel()
+
+	tx, err := testDB.Begin()
+	require.NoError(t, err)
+
+	defer func(tx *sql.Tx) {
+		err = tx.Rollback()
+		require.NoError(t, err)
+	}(tx)
+
+	testQueries := New(tx)
+
+	member1 := createRandomMember(t, testQueries)
+	err = testQueries.DeleteMember(context.Background(), member1.ID)
 	require.NoError(t, err)
 
 	member2, err := testQueries.GetMember(context.Background(), member1.ID)
@@ -175,10 +276,23 @@ func TestDeleteMember(t *testing.T) {
 	require.Empty(t, member2)
 }
 
-func TestDeleteMembers(t *testing.T) {
-	member1 := createRandomMember(t)
-	member2 := createRandomMember(t)
-	err := testQueries.DeleteMembers(context.Background(), []uuid.UUID{member1.ID, member2.ID})
+func (s *DatabaseTestSuite) TestDeleteMembers() {
+	t := s.T()
+	t.Parallel()
+
+	tx, err := testDB.Begin()
+	require.NoError(t, err)
+
+	defer func(tx *sql.Tx) {
+		err = tx.Rollback()
+		require.NoError(t, err)
+	}(tx)
+
+	testQueries := New(tx)
+
+	member1 := createRandomMember(t, testQueries)
+	member2 := createRandomMember(t, testQueries)
+	err = testQueries.DeleteMembers(context.Background(), []uuid.UUID{member1.ID, member2.ID})
 	require.NoError(t, err)
 
 	member3, err := testQueries.GetMember(context.Background(), member1.ID)
