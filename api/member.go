@@ -235,7 +235,7 @@ func (server *Server) updateMember(c *fiber.Ctx) error {
 }
 
 type deleteMemberRequest struct {
-	ID uuid.UUID `params:"id" validate:"required"`
+	ID uuid.UUID `params:"id"`
 }
 
 // @Summary      Delete member
@@ -249,11 +249,6 @@ func (server *Server) deleteMember(c *fiber.Ctx) error {
 	req := new(deleteMemberRequest)
 
 	if err := c.ParamsParser(req); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
-	}
-
-	validate := newValidator()
-	if err := validate.Struct(req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
 	}
 

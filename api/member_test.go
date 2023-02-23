@@ -72,7 +72,7 @@ func TestGetMemberAPI(t *testing.T) {
 			memberID: "InvalidID",
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
-					GetMember(gomock.Any(), gomock.Any()).
+					GetMember(gomock.Any(), gomock.Eq(member.ID)).
 					Times(0)
 			},
 			checkResponse: func(t *testing.T, response *http.Response) {
@@ -644,13 +644,13 @@ func TestDeleteMemberAPI(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		memberID      uuid.UUID
+		memberID      string
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, response *http.Response)
 	}{
 		{
 			name:     "OK",
-			memberID: member.ID,
+			memberID: member.ID.String(),
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					DeleteMember(gomock.Any(), gomock.Eq(member.ID)).
@@ -661,7 +661,31 @@ func TestDeleteMemberAPI(t *testing.T) {
 				require.Equal(t, http.StatusNoContent, response.StatusCode)
 			},
 		},
-		// TODO: add more cases
+		{
+			name:     "InvalidID",
+			memberID: "InvalidID",
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					DeleteMember(gomock.Any(), gomock.Eq(member.ID)).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
+		{
+			name:     "DeleteMemberError",
+			memberID: member.ID.String(),
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					DeleteMember(gomock.Any(), gomock.Eq(member.ID)).
+					Times(1).
+					Return(sql.ErrConnDone)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusInternalServerError, response.StatusCode)
+			},
+		},
 	}
 
 	for i := range testCases {
@@ -677,7 +701,7 @@ func TestDeleteMemberAPI(t *testing.T) {
 			// start test server and send request
 			server := NewServer(store)
 
-			url := fmt.Sprintf("/api/v1/members/%s", member.ID)
+			url := fmt.Sprintf("/api/v1/members/%s", tc.memberID)
 			request, err := http.NewRequest(http.MethodDelete, url, nil)
 			require.NoError(t, err)
 
