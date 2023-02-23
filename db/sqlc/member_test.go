@@ -65,25 +65,103 @@ func TestListMember(t *testing.T) {
 	}
 }
 
-func TestUpdateMember(t *testing.T) {
-	member1 := createRandomMember(t)
+func TestUpdateMemberAllFields(t *testing.T) {
+	oldMember := createRandomMember(t)
+
+	newFirstName := util.RandomName()
+	newLastName := util.RandomName()
+	newEmail := util.RandomEmail()
 
 	arg := UpdateMemberParams{
-		ID:        member1.ID,
-		FirstName: sql.NullString{Valid: false},
-		LastName:  sql.NullString{String: util.RandomName(), Valid: true},
-		Email:     sql.NullString{String: util.RandomEmail(), Valid: true},
+		ID:        oldMember.ID,
+		FirstName: sql.NullString{String: newFirstName, Valid: true},
+		LastName:  sql.NullString{String: newLastName, Valid: true},
+		Email:     sql.NullString{String: newEmail, Valid: true},
 	}
 
-	member2, err := testQueries.UpdateMember(context.Background(), arg)
+	updatedMember, err := testQueries.UpdateMember(context.Background(), arg)
 	require.NoError(t, err)
-	require.NotEmpty(t, member2)
+	require.NotEmpty(t, updatedMember)
 
-	require.Equal(t, member1.ID, member2.ID)
-	require.Equal(t, member1.FirstName, member2.FirstName)
-	require.Equal(t, arg.LastName.String, member2.LastName)
-	require.Equal(t, arg.Email.String, member2.Email.String)
-	require.WithinDuration(t, member1.CreatedAt, member2.CreatedAt, time.Second)
+	require.Equal(t, oldMember.ID, updatedMember.ID)
+	require.Equal(t, newFirstName, updatedMember.FirstName)
+	require.NotEqual(t, oldMember.FirstName, updatedMember.FirstName)
+	require.Equal(t, newLastName, updatedMember.LastName)
+	require.NotEqual(t, oldMember.LastName, updatedMember.LastName)
+	require.Equal(t, newEmail, updatedMember.Email.String)
+	require.NotEqual(t, oldMember.Email.String, updatedMember.Email.String)
+	require.WithinDuration(t, oldMember.CreatedAt, updatedMember.CreatedAt, time.Second)
+}
+
+func TestUpdateMemberOnlyFirstName(t *testing.T) {
+	oldMember := createRandomMember(t)
+	newFirstName := util.RandomName()
+
+	arg := UpdateMemberParams{
+		ID:        oldMember.ID,
+		FirstName: sql.NullString{String: newFirstName, Valid: true},
+		LastName:  sql.NullString{Valid: false},
+		Email:     sql.NullString{Valid: false},
+	}
+
+	updatedMember, err := testQueries.UpdateMember(context.Background(), arg)
+	require.NoError(t, err)
+	require.NotEmpty(t, updatedMember)
+
+	require.Equal(t, oldMember.ID, updatedMember.ID)
+	require.Equal(t, newFirstName, updatedMember.FirstName)
+	require.NotEqual(t, oldMember.FirstName, updatedMember.FirstName)
+	require.Equal(t, oldMember.LastName, updatedMember.LastName)
+	require.Equal(t, oldMember.Email.String, updatedMember.Email.String)
+	require.WithinDuration(t, oldMember.CreatedAt, updatedMember.CreatedAt, time.Second)
+}
+
+func TestUpdateMemberOnlyLastName(t *testing.T) {
+	oldMember := createRandomMember(t)
+
+	newLastName := util.RandomName()
+
+	arg := UpdateMemberParams{
+		ID:        oldMember.ID,
+		FirstName: sql.NullString{Valid: false},
+		LastName:  sql.NullString{String: newLastName, Valid: true},
+		Email:     sql.NullString{Valid: false},
+	}
+
+	updatedMember, err := testQueries.UpdateMember(context.Background(), arg)
+	require.NoError(t, err)
+	require.NotEmpty(t, updatedMember)
+
+	require.Equal(t, oldMember.ID, updatedMember.ID)
+	require.Equal(t, oldMember.FirstName, updatedMember.FirstName)
+	require.Equal(t, newLastName, updatedMember.LastName)
+	require.NotEqual(t, oldMember.LastName, updatedMember.LastName)
+	require.Equal(t, oldMember.Email.String, updatedMember.Email.String)
+	require.WithinDuration(t, oldMember.CreatedAt, updatedMember.CreatedAt, time.Second)
+}
+
+func TestUpdateMemberOnlyEmail(t *testing.T) {
+	oldMember := createRandomMember(t)
+
+	newEmail := util.RandomEmail()
+
+	arg := UpdateMemberParams{
+		ID:        oldMember.ID,
+		FirstName: sql.NullString{Valid: false},
+		LastName:  sql.NullString{Valid: false},
+		Email:     sql.NullString{String: newEmail, Valid: true},
+	}
+
+	updatedMember, err := testQueries.UpdateMember(context.Background(), arg)
+	require.NoError(t, err)
+	require.NotEmpty(t, updatedMember)
+
+	require.Equal(t, oldMember.ID, updatedMember.ID)
+	require.Equal(t, oldMember.FirstName, updatedMember.FirstName)
+	require.Equal(t, oldMember.LastName, updatedMember.LastName)
+	require.Equal(t, newEmail, updatedMember.Email.String)
+	require.NotEqual(t, oldMember.Email.String, updatedMember.Email.String)
+	require.WithinDuration(t, oldMember.CreatedAt, updatedMember.CreatedAt, time.Second)
 }
 
 func TestDeleteMember(t *testing.T) {
