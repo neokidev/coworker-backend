@@ -106,6 +106,11 @@ func TestGetMemberAPI(t *testing.T) {
 
 func TestCreateMemberAPI(t *testing.T) {
 	member := randomMember()
+	memberOnlyRequiredFields := db.Member{
+		ID:        member.ID,
+		FirstName: member.FirstName,
+		LastName:  member.LastName,
+	}
 
 	testCases := []struct {
 		name          string
@@ -156,11 +161,11 @@ func TestCreateMemberAPI(t *testing.T) {
 				store.EXPECT().
 					CreateMember(gomock.Any(), gomock.Eq(arg)).
 					Times(1).
-					Return(member, nil)
+					Return(memberOnlyRequiredFields, nil)
 			},
 			checkResponse: func(t *testing.T, response *http.Response) {
 				require.Equal(t, http.StatusOK, response.StatusCode)
-				requireBodyMatchMember(t, response.Body, member)
+				requireBodyMatchMember(t, response.Body, memberOnlyRequiredFields)
 			},
 		},
 		{
@@ -505,15 +510,20 @@ func TestListMembersAPI(t *testing.T) {
 
 func TestUpdateMemberAPI(t *testing.T) {
 	member := randomMember()
+	memberOnlyRequiredFields := db.Member{
+		ID: member.ID,
+	}
 
 	testCases := []struct {
 		name          string
+		memberID      string
 		body          fiber.Map
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, response *http.Response)
 	}{
 		{
-			name: "OK",
+			name:     "OK",
+			memberID: member.ID.String(),
 			body: fiber.Map{
 				"first_name": member.FirstName,
 				"last_name":  member.LastName,
@@ -537,6 +547,67 @@ func TestUpdateMemberAPI(t *testing.T) {
 				requireBodyMatchMember(t, response.Body, member)
 			},
 		},
+		{
+			name:     "OptionalFieldsNotFound",
+			memberID: member.ID.String(),
+			body:     fiber.Map{},
+			buildStubs: func(store *mockdb.MockStore) {
+				arg := db.UpdateMemberParams{
+					ID: member.ID,
+				}
+
+				store.EXPECT().
+					UpdateMember(gomock.Any(), gomock.Eq(arg)).
+					Times(1).
+					Return(memberOnlyRequiredFields, nil)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusOK, response.StatusCode)
+				requireBodyMatchMember(t, response.Body, memberOnlyRequiredFields)
+			},
+		},
+		{
+			name:     "InvalidEmail",
+			memberID: member.ID.String(),
+			body: fiber.Map{
+				"first_name": member.FirstName,
+				"last_name":  member.LastName,
+				"email":      "InvalidEmail",
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					UpdateMember(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
+		{
+			name:     "UpdateMemberError",
+			memberID: member.ID.String(),
+			body: fiber.Map{
+				"first_name": member.FirstName,
+				"last_name":  member.LastName,
+				"email":      member.Email.String,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				arg := db.UpdateMemberParams{
+					ID:        member.ID,
+					FirstName: sql.NullString{String: member.FirstName, Valid: true},
+					LastName:  sql.NullString{String: member.LastName, Valid: true},
+					Email:     member.Email,
+				}
+
+				store.EXPECT().
+					UpdateMember(gomock.Any(), gomock.Eq(arg)).
+					Times(1).
+					Return(db.Member{}, sql.ErrConnDone)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusInternalServerError, response.StatusCode)
+			},
+		},
 	}
 
 	for i := range testCases {
@@ -556,7 +627,7 @@ func TestUpdateMemberAPI(t *testing.T) {
 			data, err := json.Marshal(tc.body)
 			require.NoError(t, err)
 
-			url := fmt.Sprintf("/api/v1/members/%s", member.ID)
+			url := fmt.Sprintf("/api/v1/members/%s", tc.memberID)
 			request, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(data))
 			require.NoError(t, err)
 

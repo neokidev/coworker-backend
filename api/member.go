@@ -182,9 +182,9 @@ type updateMemberRequestParams struct {
 }
 
 type updateMemberRequestBody struct {
-	FirstName db.NullString `json:"first_name" swaggertype:"string"`
-	LastName  db.NullString `json:"last_name" swaggertype:"string"`
-	Email     db.NullString `json:"email" validate:"email" swaggertype:"string" format:"email"`
+	FirstName string `json:"first_name" validate:"omitempty" swaggertype:"string"`
+	LastName  string `json:"last_name" validate:"omitempty" swaggertype:"string"`
+	Email     string `json:"email" validate:"omitempty,email" swaggertype:"string" format:"email"`
 }
 
 // @Summary      Update member
@@ -202,14 +202,16 @@ func (server *Server) updateMember(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
 	}
 
-	validate := newValidator()
-	if err := validate.Struct(params); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
-	}
-
 	body := new(updateMemberRequestBody)
+
 	if err := c.BodyParser(body); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
+	}
+
+	validate := newValidator()
+
+	if err := validate.Struct(params); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
 	}
 
 	if err := validate.Struct(body); err != nil {
@@ -218,9 +220,9 @@ func (server *Server) updateMember(c *fiber.Ctx) error {
 
 	arg := db.UpdateMemberParams{
 		ID:        params.ID,
-		FirstName: body.FirstName.NullString,
-		LastName:  body.LastName.NullString,
-		Email:     body.Email.NullString,
+		FirstName: sql.NullString{String: body.FirstName, Valid: len(body.FirstName) > 0},
+		LastName:  sql.NullString{String: body.LastName, Valid: len(body.LastName) > 0},
+		Email:     sql.NullString{String: body.Email, Valid: len(body.Email) > 0},
 	}
 
 	member, err := server.store.UpdateMember(c.Context(), arg)
