@@ -8,6 +8,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -19,9 +20,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var (
-	testDB *sql.DB
-)
+var testDB *sql.DB
 
 type DatabaseConfig struct {
 	image      string
@@ -89,6 +88,17 @@ func migrateUp(db *sql.DB, config DatabaseConfig) error {
 	}
 
 	return nil
+}
+
+func beginTransaction(t *testing.T) *sql.Tx {
+	tx, err := testDB.Begin()
+	require.NoError(t, err)
+	return tx
+}
+
+func rollbackTransaction(t *testing.T, tx *sql.Tx) {
+	err := tx.Rollback()
+	require.NoError(t, err)
 }
 
 func TestDatabaseTestSuite(t *testing.T) {

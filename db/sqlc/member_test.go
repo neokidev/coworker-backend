@@ -36,13 +36,8 @@ func (s *DatabaseTestSuite) TestCreateMember() {
 	t := s.T()
 	t.Parallel()
 
-	tx, err := testDB.Begin()
-	require.NoError(t, err)
-
-	defer func(tx *sql.Tx) {
-		err = tx.Rollback()
-		require.NoError(t, err)
-	}(tx)
+	tx := beginTransaction(t)
+	defer rollbackTransaction(t, tx)
 
 	testQueries := New(tx)
 
@@ -53,13 +48,8 @@ func (s *DatabaseTestSuite) TestGetMember() {
 	t := s.T()
 	t.Parallel()
 
-	tx, err := testDB.Begin()
-	require.NoError(t, err)
-
-	defer func(tx *sql.Tx) {
-		err = tx.Rollback()
-		require.NoError(t, err)
-	}(tx)
+	tx := beginTransaction(t)
+	defer rollbackTransaction(t, tx)
 
 	testQueries := New(tx)
 
@@ -79,13 +69,8 @@ func (s *DatabaseTestSuite) TestListMember() {
 	t := s.T()
 	t.Parallel()
 
-	tx, err := testDB.Begin()
-	require.NoError(t, err)
-
-	defer func(tx *sql.Tx) {
-		err = tx.Rollback()
-		require.NoError(t, err)
-	}(tx)
+	tx := beginTransaction(t)
+	defer rollbackTransaction(t, tx)
 
 	testQueries := New(tx)
 
@@ -108,13 +93,8 @@ func (s *DatabaseTestSuite) TestUpdateMemberAllFields() {
 	t := s.T()
 	t.Parallel()
 
-	tx, err := testDB.Begin()
-	require.NoError(t, err)
-
-	defer func(tx *sql.Tx) {
-		err = tx.Rollback()
-		require.NoError(t, err)
-	}(tx)
+	tx := beginTransaction(t)
+	defer rollbackTransaction(t, tx)
 
 	testQueries := New(tx)
 
@@ -148,13 +128,8 @@ func (s *DatabaseTestSuite) TestUpdateMemberOnlyFirstName() {
 	t := s.T()
 	t.Parallel()
 
-	tx, err := testDB.Begin()
-	require.NoError(t, err)
-
-	defer func(tx *sql.Tx) {
-		err = tx.Rollback()
-		require.NoError(t, err)
-	}(tx)
+	tx := beginTransaction(t)
+	defer rollbackTransaction(t, tx)
 
 	testQueries := New(tx)
 
@@ -184,13 +159,8 @@ func (s *DatabaseTestSuite) TestUpdateMemberOnlyLastName() {
 	t := s.T()
 	t.Parallel()
 
-	tx, err := testDB.Begin()
-	require.NoError(t, err)
-
-	defer func(tx *sql.Tx) {
-		err = tx.Rollback()
-		require.NoError(t, err)
-	}(tx)
+	tx := beginTransaction(t)
+	defer rollbackTransaction(t, tx)
 
 	testQueries := New(tx)
 
@@ -220,13 +190,8 @@ func (s *DatabaseTestSuite) TestUpdateMemberOnlyEmail() {
 	t := s.T()
 	t.Parallel()
 
-	tx, err := testDB.Begin()
-	require.NoError(t, err)
-
-	defer func(tx *sql.Tx) {
-		err = tx.Rollback()
-		require.NoError(t, err)
-	}(tx)
+	tx := beginTransaction(t)
+	defer rollbackTransaction(t, tx)
 
 	testQueries := New(tx)
 
@@ -256,18 +221,13 @@ func (s *DatabaseTestSuite) TestDeleteMember() {
 	t := s.T()
 	t.Parallel()
 
-	tx, err := testDB.Begin()
-	require.NoError(t, err)
-
-	defer func(tx *sql.Tx) {
-		err = tx.Rollback()
-		require.NoError(t, err)
-	}(tx)
+	tx := beginTransaction(t)
+	defer rollbackTransaction(t, tx)
 
 	testQueries := New(tx)
 
 	member1 := createRandomMember(t, testQueries)
-	err = testQueries.DeleteMember(context.Background(), member1.ID)
+	err := testQueries.DeleteMember(context.Background(), member1.ID)
 	require.NoError(t, err)
 
 	member2, err := testQueries.GetMember(context.Background(), member1.ID)
@@ -280,19 +240,14 @@ func (s *DatabaseTestSuite) TestDeleteMembers() {
 	t := s.T()
 	t.Parallel()
 
-	tx, err := testDB.Begin()
-	require.NoError(t, err)
-
-	defer func(tx *sql.Tx) {
-		err = tx.Rollback()
-		require.NoError(t, err)
-	}(tx)
+	tx := beginTransaction(t)
+	defer rollbackTransaction(t, tx)
 
 	testQueries := New(tx)
 
 	member1 := createRandomMember(t, testQueries)
 	member2 := createRandomMember(t, testQueries)
-	err = testQueries.DeleteMembers(context.Background(), []uuid.UUID{member1.ID, member2.ID})
+	err := testQueries.DeleteMembers(context.Background(), []uuid.UUID{member1.ID, member2.ID})
 	require.NoError(t, err)
 
 	member3, err := testQueries.GetMember(context.Background(), member1.ID)
