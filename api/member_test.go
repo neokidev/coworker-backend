@@ -19,6 +19,8 @@ import (
 )
 
 func TestGetMemberAPI(t *testing.T) {
+	t.Parallel()
+
 	member := randomMember()
 
 	testCases := []struct {
@@ -85,6 +87,8 @@ func TestGetMemberAPI(t *testing.T) {
 		tc := testCases[i]
 
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
@@ -105,6 +109,8 @@ func TestGetMemberAPI(t *testing.T) {
 }
 
 func TestCreateMemberAPI(t *testing.T) {
+	t.Parallel()
+
 	member := randomMember()
 	memberOnlyRequiredFields := db.Member{
 		ID:        member.ID,
@@ -264,6 +270,8 @@ func TestCreateMemberAPI(t *testing.T) {
 		tc := testCases[i]
 
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
@@ -290,6 +298,8 @@ func TestCreateMemberAPI(t *testing.T) {
 }
 
 func TestListMembersAPI(t *testing.T) {
+	t.Parallel()
+
 	n := 5
 	members := make([]db.Member, n)
 	for i := 0; i < n; i++ {
@@ -484,6 +494,8 @@ func TestListMembersAPI(t *testing.T) {
 		tc := testCases[i]
 
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
@@ -509,6 +521,8 @@ func TestListMembersAPI(t *testing.T) {
 }
 
 func TestUpdateMemberAPI(t *testing.T) {
+	t.Parallel()
+
 	member := randomMember()
 	memberOnlyRequiredFields := db.Member{
 		ID: member.ID,
@@ -614,6 +628,8 @@ func TestUpdateMemberAPI(t *testing.T) {
 		tc := testCases[i]
 
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
@@ -640,6 +656,8 @@ func TestUpdateMemberAPI(t *testing.T) {
 }
 
 func TestDeleteMemberAPI(t *testing.T) {
+	t.Parallel()
+
 	member := randomMember()
 
 	testCases := []struct {
@@ -692,6 +710,8 @@ func TestDeleteMemberAPI(t *testing.T) {
 		tc := testCases[i]
 
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
@@ -712,6 +732,8 @@ func TestDeleteMemberAPI(t *testing.T) {
 }
 
 func TestDeleteMembersAPI(t *testing.T) {
+	t.Parallel()
+
 	member1 := randomMember()
 	member2 := randomMember()
 	memberIDs := []uuid.UUID{member1.ID, member2.ID}
@@ -773,6 +795,8 @@ func TestDeleteMembersAPI(t *testing.T) {
 		tc := testCases[i]
 
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 

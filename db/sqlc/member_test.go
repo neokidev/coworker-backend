@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func createRandomMember(t *testing.T) Member {
+func createRandomMember(t *testing.T, testQueries *Queries) Member {
 	arg := CreateMemberParams{
 		ID:        uuid.New(),
 		FirstName: util.RandomName(),
@@ -33,11 +33,25 @@ func createRandomMember(t *testing.T) Member {
 }
 
 func TestCreateMember(t *testing.T) {
-	createRandomMember(t)
+	t.Parallel()
+
+	tx := beginTransaction(t)
+	defer rollbackTransaction(t, tx)
+
+	testQueries := New(tx)
+
+	createRandomMember(t, testQueries)
 }
 
 func TestGetMember(t *testing.T) {
-	member1 := createRandomMember(t)
+	t.Parallel()
+
+	tx := beginTransaction(t)
+	defer rollbackTransaction(t, tx)
+
+	testQueries := New(tx)
+
+	member1 := createRandomMember(t, testQueries)
 	member2, err := testQueries.GetMember(context.Background(), member1.ID)
 	require.NoError(t, err)
 	require.NotEmpty(t, member2)
@@ -49,9 +63,16 @@ func TestGetMember(t *testing.T) {
 	require.WithinDuration(t, member1.CreatedAt, member2.CreatedAt, time.Second)
 }
 
-func TestListMember(t *testing.T) {
+func TestListMembers(t *testing.T) {
+	t.Parallel()
+
+	tx := beginTransaction(t)
+	defer rollbackTransaction(t, tx)
+
+	testQueries := New(tx)
+
 	for i := 0; i < 10; i++ {
-		createRandomMember(t)
+		createRandomMember(t, testQueries)
 	}
 
 	arg := ListMembersParams{Limit: 5, Offset: 5}
@@ -66,8 +87,14 @@ func TestListMember(t *testing.T) {
 }
 
 func TestUpdateMemberAllFields(t *testing.T) {
-	oldMember := createRandomMember(t)
+	t.Parallel()
 
+	tx := beginTransaction(t)
+	defer rollbackTransaction(t, tx)
+
+	testQueries := New(tx)
+
+	oldMember := createRandomMember(t, testQueries)
 	newFirstName := util.RandomName()
 	newLastName := util.RandomName()
 	newEmail := util.RandomEmail()
@@ -94,7 +121,14 @@ func TestUpdateMemberAllFields(t *testing.T) {
 }
 
 func TestUpdateMemberOnlyFirstName(t *testing.T) {
-	oldMember := createRandomMember(t)
+	t.Parallel()
+
+	tx := beginTransaction(t)
+	defer rollbackTransaction(t, tx)
+
+	testQueries := New(tx)
+
+	oldMember := createRandomMember(t, testQueries)
 	newFirstName := util.RandomName()
 
 	arg := UpdateMemberParams{
@@ -117,8 +151,14 @@ func TestUpdateMemberOnlyFirstName(t *testing.T) {
 }
 
 func TestUpdateMemberOnlyLastName(t *testing.T) {
-	oldMember := createRandomMember(t)
+	t.Parallel()
 
+	tx := beginTransaction(t)
+	defer rollbackTransaction(t, tx)
+
+	testQueries := New(tx)
+
+	oldMember := createRandomMember(t, testQueries)
 	newLastName := util.RandomName()
 
 	arg := UpdateMemberParams{
@@ -141,8 +181,14 @@ func TestUpdateMemberOnlyLastName(t *testing.T) {
 }
 
 func TestUpdateMemberOnlyEmail(t *testing.T) {
-	oldMember := createRandomMember(t)
+	t.Parallel()
 
+	tx := beginTransaction(t)
+	defer rollbackTransaction(t, tx)
+
+	testQueries := New(tx)
+
+	oldMember := createRandomMember(t, testQueries)
 	newEmail := util.RandomEmail()
 
 	arg := UpdateMemberParams{
@@ -165,7 +211,14 @@ func TestUpdateMemberOnlyEmail(t *testing.T) {
 }
 
 func TestDeleteMember(t *testing.T) {
-	member1 := createRandomMember(t)
+	t.Parallel()
+
+	tx := beginTransaction(t)
+	defer rollbackTransaction(t, tx)
+
+	testQueries := New(tx)
+
+	member1 := createRandomMember(t, testQueries)
 	err := testQueries.DeleteMember(context.Background(), member1.ID)
 	require.NoError(t, err)
 
@@ -176,8 +229,15 @@ func TestDeleteMember(t *testing.T) {
 }
 
 func TestDeleteMembers(t *testing.T) {
-	member1 := createRandomMember(t)
-	member2 := createRandomMember(t)
+	t.Parallel()
+
+	tx := beginTransaction(t)
+	defer rollbackTransaction(t, tx)
+
+	testQueries := New(tx)
+
+	member1 := createRandomMember(t, testQueries)
+	member2 := createRandomMember(t, testQueries)
 	err := testQueries.DeleteMembers(context.Background(), []uuid.UUID{member1.ID, member2.ID})
 	require.NoError(t, err)
 
@@ -190,4 +250,22 @@ func TestDeleteMembers(t *testing.T) {
 	require.Error(t, err)
 	require.EqualError(t, err, sql.ErrNoRows.Error())
 	require.Empty(t, member4)
+}
+
+func TestCountMembers(t *testing.T) {
+	t.Parallel()
+
+	tx := beginTransaction(t)
+	defer rollbackTransaction(t, tx)
+
+	testQueries := New(tx)
+
+	n := 10
+	for i := 0; i < n; i++ {
+		createRandomMember(t, testQueries)
+	}
+
+	count, err := testQueries.CountMembers(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, count, int64(n))
 }

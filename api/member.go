@@ -45,7 +45,6 @@ func newMemberResponse(member db.Member) memberResponse {
 // @Router       /members [post]
 func (server *Server) createMember(c *fiber.Ctx) error {
 	req := new(createMemberRequest)
-
 	if err := c.BodyParser(req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
 	}
@@ -84,7 +83,6 @@ type getMemberRequest struct {
 // @Router       /members/{id} [get]
 func (server *Server) getMember(c *fiber.Ctx) error {
 	req := new(getMemberRequest)
-
 	if err := c.ParamsParser(req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
 	}
@@ -94,7 +92,6 @@ func (server *Server) getMember(c *fiber.Ctx) error {
 		if err == sql.ErrNoRows {
 			return c.Status(fiber.StatusNotFound).JSON(newErrorResponse(err))
 		}
-
 		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
 	}
 
@@ -138,7 +135,6 @@ type listMembersResponse struct {
 // @Router       /members [get]
 func (server *Server) listMembers(c *fiber.Ctx) error {
 	req := new(listMembersRequest)
-
 	if err := c.QueryParser(req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
 	}
@@ -197,23 +193,19 @@ type updateMemberRequestBody struct {
 // @Router       /members/{id} [put]
 func (server *Server) updateMember(c *fiber.Ctx) error {
 	params := new(updateMemberRequestParams)
-
 	if err := c.ParamsParser(params); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
 	}
 
 	body := new(updateMemberRequestBody)
-
 	if err := c.BodyParser(body); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
 	}
 
 	validate := newValidator()
-
 	if err := validate.Struct(params); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
 	}
-
 	if err := validate.Struct(body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
 	}
@@ -247,7 +239,6 @@ type deleteMemberRequest struct {
 // @Router       /members/{id} [delete]
 func (server *Server) deleteMember(c *fiber.Ctx) error {
 	req := new(deleteMemberRequest)
-
 	if err := c.ParamsParser(req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
 	}
@@ -273,7 +264,6 @@ type deleteMembersRequest struct {
 // @Router       /members [delete]
 func (server *Server) deleteMembers(c *fiber.Ctx) error {
 	req := new(deleteMembersRequest)
-
 	if err := c.QueryParser(req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(newErrorResponse(err))
 	}
