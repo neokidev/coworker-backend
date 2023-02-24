@@ -32,8 +32,7 @@ func createRandomMember(t *testing.T, testQueries *Queries) Member {
 	return member
 }
 
-func (s *DatabaseTestSuite) TestCreateMember() {
-	t := s.T()
+func TestCreateMember(t *testing.T) {
 	t.Parallel()
 
 	tx := beginTransaction(t)
@@ -44,8 +43,7 @@ func (s *DatabaseTestSuite) TestCreateMember() {
 	createRandomMember(t, testQueries)
 }
 
-func (s *DatabaseTestSuite) TestGetMember() {
-	t := s.T()
+func TestGetMember(t *testing.T) {
 	t.Parallel()
 
 	tx := beginTransaction(t)
@@ -65,8 +63,7 @@ func (s *DatabaseTestSuite) TestGetMember() {
 	require.WithinDuration(t, member1.CreatedAt, member2.CreatedAt, time.Second)
 }
 
-func (s *DatabaseTestSuite) TestListMembers() {
-	t := s.T()
+func TestListMembers(t *testing.T) {
 	t.Parallel()
 
 	tx := beginTransaction(t)
@@ -89,8 +86,7 @@ func (s *DatabaseTestSuite) TestListMembers() {
 	}
 }
 
-func (s *DatabaseTestSuite) TestUpdateMemberAllFields() {
-	t := s.T()
+func TestUpdateMemberAllFields(t *testing.T) {
 	t.Parallel()
 
 	tx := beginTransaction(t)
@@ -124,8 +120,7 @@ func (s *DatabaseTestSuite) TestUpdateMemberAllFields() {
 	require.WithinDuration(t, oldMember.CreatedAt, updatedMember.CreatedAt, time.Second)
 }
 
-func (s *DatabaseTestSuite) TestUpdateMemberOnlyFirstName() {
-	t := s.T()
+func TestUpdateMemberOnlyFirstName(t *testing.T) {
 	t.Parallel()
 
 	tx := beginTransaction(t)
@@ -155,8 +150,7 @@ func (s *DatabaseTestSuite) TestUpdateMemberOnlyFirstName() {
 	require.WithinDuration(t, oldMember.CreatedAt, updatedMember.CreatedAt, time.Second)
 }
 
-func (s *DatabaseTestSuite) TestUpdateMemberOnlyLastName() {
-	t := s.T()
+func TestUpdateMemberOnlyLastName(t *testing.T) {
 	t.Parallel()
 
 	tx := beginTransaction(t)
@@ -186,8 +180,7 @@ func (s *DatabaseTestSuite) TestUpdateMemberOnlyLastName() {
 	require.WithinDuration(t, oldMember.CreatedAt, updatedMember.CreatedAt, time.Second)
 }
 
-func (s *DatabaseTestSuite) TestUpdateMemberOnlyEmail() {
-	t := s.T()
+func TestUpdateMemberOnlyEmail(t *testing.T) {
 	t.Parallel()
 
 	tx := beginTransaction(t)
@@ -217,8 +210,7 @@ func (s *DatabaseTestSuite) TestUpdateMemberOnlyEmail() {
 	require.WithinDuration(t, oldMember.CreatedAt, updatedMember.CreatedAt, time.Second)
 }
 
-func (s *DatabaseTestSuite) TestDeleteMember() {
-	t := s.T()
+func TestDeleteMember(t *testing.T) {
 	t.Parallel()
 
 	tx := beginTransaction(t)
@@ -236,8 +228,7 @@ func (s *DatabaseTestSuite) TestDeleteMember() {
 	require.Empty(t, member2)
 }
 
-func (s *DatabaseTestSuite) TestDeleteMembers() {
-	t := s.T()
+func TestDeleteMembers(t *testing.T) {
 	t.Parallel()
 
 	tx := beginTransaction(t)
@@ -261,8 +252,7 @@ func (s *DatabaseTestSuite) TestDeleteMembers() {
 	require.Empty(t, member4)
 }
 
-func (s *DatabaseTestSuite) TestCountMembers() {
-	t := s.T()
+func TestCountMembers(t *testing.T) {
 	t.Parallel()
 
 	tx := beginTransaction(t)

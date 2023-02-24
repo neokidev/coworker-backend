@@ -9,10 +9,10 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"log"
+	"os"
 	"testing"
 	"time"
 
@@ -29,10 +29,6 @@ type DatabaseConfig struct {
 	password   string
 	dbName     string
 	driverName string
-}
-
-type DatabaseTestSuite struct {
-	suite.Suite
 }
 
 func newTestContainer(ctx context.Context, config DatabaseConfig) (testcontainers.Container, nat.Port, error) {
@@ -101,9 +97,7 @@ func rollbackTransaction(t *testing.T, tx *sql.Tx) {
 	require.NoError(t, err)
 }
 
-func TestDatabaseTestSuite(t *testing.T) {
-	t.Parallel()
-
+func TestMain(m *testing.M) {
 	dbConfig := DatabaseConfig{
 		image:      "postgres:15-alpine",
 		port:       5432,
@@ -137,5 +131,5 @@ func TestDatabaseTestSuite(t *testing.T) {
 		log.Fatal("cannot migrate up:", err)
 	}
 
-	suite.Run(t, new(DatabaseTestSuite))
+	os.Exit(m.Run())
 }
