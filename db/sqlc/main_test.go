@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/go-connections/nat"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/stretchr/testify/suite"
@@ -18,59 +19,110 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var testDB *sql.DB
+var (
+	testDB *sql.DB
+)
+
+type DatabaseConfig struct {
+	image      string
+	port       int
+	user       string
+	password   string
+	dbName     string
+	driverName string
+}
 
 type DatabaseTestSuite struct {
 	suite.Suite
 }
 
-func TestDatabaseTestSuite(t *testing.T) {
-	t.Parallel()
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+func newTestContainer(ctx context.Context, config DatabaseConfig) (testcontainers.Container, nat.Port, error) {
 	req := testcontainers.ContainerRequest{
-		Image:        "postgres:15-alpine",
-		ExposedPorts: []string{"5432/tcp"},
-		HostConfigModifier: func(config *container.HostConfig) {
-			config.AutoRemove = true
+		Image:        config.image,
+		ExposedPorts: []string{fmt.Sprintf("%d/tcp", config.port)},
+		HostConfigModifier: func(hostConfig *container.HostConfig) {
+			hostConfig.AutoRemove = true
 		},
 		Env: map[string]string{
-			"POSTGRES_USER":     "postgres",
-			"POSTGRES_PASSWORD": "secret",
-			"POSTGRES_DB":       "postgres",
+			"POSTGRES_USER":     config.user,
+			"POSTGRES_PASSWORD": config.password,
+			"POSTGRES_DB":       config.dbName,
 		},
-		WaitingFor: wait.ForListeningPort("5432/tcp"),
+		WaitingFor: wait.ForListeningPort(
+			nat.Port(
+				fmt.Sprintf("%d/tcp", config.port),
+			),
+		),
 	}
 	testContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
 		Started:          true,
 	})
 	if err != nil {
-		log.Fatal("cannot create container for testing:", err)
+		return nil, "", err
 	}
 
-	port, err := testContainer.MappedPort(ctx, "5432")
-
-	sourceName := fmt.Sprintf("postgresql://postgres:secret@127.0.0.1:%d/postgres?sslmode=disable", port.Int())
-	testDB, err = sql.Open("postgres", sourceName)
+	mappedPort, err := testContainer.MappedPort(ctx, nat.Port(fmt.Sprintf("%d", config.port)))
 	if err != nil {
-		log.Fatal("cannot connect to db:", err)
+		return nil, "", err
 	}
 
-	driver, err := postgres.WithInstance(testDB, &postgres.Config{})
+	return testContainer, mappedPort, nil
+}
+
+func migrateUp(db *sql.DB, config DatabaseConfig) error {
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
-		log.Fatal("cannot create migration instance:", err)
+		return err
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
 		"file://../migration",
-		"postgres", driver)
+		config.dbName, driver)
 	if err != nil {
-		log.Fatal("cannot create migration instance:", err)
+		return err
 	}
 
 	err = m.Up()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func TestDatabaseTestSuite(t *testing.T) {
+	t.Parallel()
+
+	dbConfig := DatabaseConfig{
+		image:      "postgres:15-alpine",
+		port:       5432,
+		user:       "postgres",
+		password:   "secret",
+		dbName:     "coworker",
+		driverName: "postgres",
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	_, mappedPort, err := newTestContainer(ctx, dbConfig)
+	if err != nil {
+		log.Fatal("cannot create container for testing:", err)
+	}
+
+	sourceName := fmt.Sprintf("postgresql://%s:%s@127.0.0.1:%d/%s?sslmode=disable",
+		dbConfig.user,
+		dbConfig.password,
+		mappedPort.Int(),
+		dbConfig.dbName,
+	)
+	testDB, err = sql.Open(dbConfig.driverName, sourceName)
+	if err != nil {
+		log.Fatal("cannot connect to db:", err)
+	}
+
+	err = migrateUp(testDB, dbConfig)
 	if err != nil {
 		log.Fatal("cannot migrate up:", err)
 	}
