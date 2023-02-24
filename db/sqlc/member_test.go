@@ -65,7 +65,7 @@ func (s *DatabaseTestSuite) TestGetMember() {
 	require.WithinDuration(t, member1.CreatedAt, member2.CreatedAt, time.Second)
 }
 
-func (s *DatabaseTestSuite) TestListMember() {
+func (s *DatabaseTestSuite) TestListMembers() {
 	t := s.T()
 	t.Parallel()
 
@@ -259,4 +259,23 @@ func (s *DatabaseTestSuite) TestDeleteMembers() {
 	require.Error(t, err)
 	require.EqualError(t, err, sql.ErrNoRows.Error())
 	require.Empty(t, member4)
+}
+
+func (s *DatabaseTestSuite) TestCountMembers() {
+	t := s.T()
+	t.Parallel()
+
+	tx := beginTransaction(t)
+	defer rollbackTransaction(t, tx)
+
+	testQueries := New(tx)
+
+	n := 10
+	for i := 0; i < n; i++ {
+		createRandomMember(t, testQueries)
+	}
+
+	count, err := testQueries.CountMembers(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, count, int64(n))
 }
