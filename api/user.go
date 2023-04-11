@@ -8,8 +8,8 @@ import (
 )
 
 type createUserRequest struct {
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
+	FirstName string `json:"first_name" validate:"required,without_space,without_number,without_punct,without_symbol"`
+	LastName  string `json:"last_name" validate:"required,without_space,without_number,without_punct,without_symbol"`
 	Email     string `json:"email" validate:"required,email" swaggertype:"string"`
 	Password  string `json:"password" validate:"required,min=14"`
 }
