@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang/mock/gomock"
+	"github.com/lib/pq"
 	mockdb "github.com/ot07/coworker-backend/db/mock"
 	db "github.com/ot07/coworker-backend/db/sqlc"
 	"github.com/ot07/coworker-backend/util"
@@ -80,6 +82,212 @@ func TestCreateUserAPI(t *testing.T) {
 			checkResponse: func(t *testing.T, response *http.Response) {
 				require.Equal(t, http.StatusOK, response.StatusCode)
 				requireBodyMatchUser(t, response.Body, user)
+			},
+		},
+		{
+			name: "InternalError",
+			body: fiber.Map{
+				"first_name": user.FirstName,
+				"last_name":  user.LastName,
+				"email":      user.Email,
+				"password":   password,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					CreateUser(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return(db.User{}, sql.ErrConnDone)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusInternalServerError, response.StatusCode)
+			},
+		},
+		{
+			name: "DuplicateEmail",
+			body: fiber.Map{
+				"first_name": user.FirstName,
+				"last_name":  user.LastName,
+				"email":      user.Email,
+				"password":   password,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					CreateUser(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return(db.User{}, &pq.Error{Code: "23505"})
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusForbidden, response.StatusCode)
+			},
+		},
+		{
+			name: "FirstNameWithSpace",
+			body: fiber.Map{
+				"first_name": "user ",
+				"last_name":  user.LastName,
+				"email":      user.Email,
+				"password":   password,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					CreateUser(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
+		{
+			name: "FirstNameWithNumber",
+			body: fiber.Map{
+				"first_name": "user1",
+				"last_name":  user.LastName,
+				"email":      user.Email,
+				"password":   password,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					CreateUser(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
+		{
+			name: "FirstNameWithPunct",
+			body: fiber.Map{
+				"first_name": "user!",
+				"last_name":  user.LastName,
+				"email":      user.Email,
+				"password":   password,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					CreateUser(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
+		{
+			name: "FirstNameWithSymbol",
+			body: fiber.Map{
+				"first_name": "user|",
+				"last_name":  user.LastName,
+				"email":      user.Email,
+				"password":   password,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					CreateUser(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
+		{
+			name: "LastNameWithSpace",
+			body: fiber.Map{
+				"first_name": user.FirstName,
+				"last_name":  "user ",
+				"email":      user.Email,
+				"password":   password,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					CreateUser(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
+		{
+			name: "LastNameWithNumber",
+			body: fiber.Map{
+				"first_name": user.FirstName,
+				"last_name":  "user1",
+				"email":      user.Email,
+				"password":   password,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					CreateUser(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
+		{
+			name: "LastNameWithPunct",
+			body: fiber.Map{
+				"first_name": user.FirstName,
+				"last_name":  "user!",
+				"email":      user.Email,
+				"password":   password,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					CreateUser(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
+		{
+			name: "LastNameWithSymbol",
+			body: fiber.Map{
+				"first_name": user.FirstName,
+				"last_name":  "user|",
+				"email":      user.Email,
+				"password":   password,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					CreateUser(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
+		{
+			name: "InvalidEmail",
+			body: fiber.Map{
+				"first_name": user.FirstName,
+				"last_name":  user.LastName,
+				"email":      "invalid-email",
+				"password":   password,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					CreateUser(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
+		{
+			name: "TooShortPassword",
+			body: fiber.Map{
+				"first_name": user.FirstName,
+				"last_name":  user.LastName,
+				"email":      user.Email,
+				"password":   "abcdefghijklm",
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					CreateUser(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
 			},
 		},
 	}
