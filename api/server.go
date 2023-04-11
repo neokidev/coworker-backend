@@ -23,6 +23,8 @@ func NewServer(store db.Store) *Server {
 	api := app.Group("/api")
 	v1 := api.Group("/v1")
 
+	v1.Post("/users", server.createUser)
+
 	v1.Post("/members", server.createMember)
 	v1.Get("/members/:id", server.getMember)
 	v1.Get("/members", server.listMembers)
