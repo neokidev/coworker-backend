@@ -5,6 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"testing"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
@@ -12,10 +17,6 @@ import (
 	db "github.com/ot07/coworker-backend/db/sqlc"
 	"github.com/ot07/coworker-backend/util"
 	"github.com/stretchr/testify/require"
-	"io"
-	"net/http"
-	"testing"
-	"time"
 )
 
 func TestGetMemberAPI(t *testing.T) {
@@ -96,7 +97,7 @@ func TestGetMemberAPI(t *testing.T) {
 			tc.buildStubs(store)
 
 			// start test server and send request
-			server := NewServer(store)
+			server := newTestServer(t, store)
 
 			url := fmt.Sprintf("/api/v1/members/%s", tc.memberID)
 			request, err := http.NewRequest(http.MethodGet, url, nil)
@@ -279,7 +280,7 @@ func TestCreateMemberAPI(t *testing.T) {
 			tc.buildStubs(store)
 
 			// start test server and send request
-			server := NewServer(store)
+			server := newTestServer(t, store)
 
 			// Marshal body data to JSON
 			data, err := json.Marshal(tc.body)
@@ -502,7 +503,7 @@ func TestListMembersAPI(t *testing.T) {
 			store := mockdb.NewMockStore(ctrl)
 			tc.buildStubs(store)
 
-			server := NewServer(store)
+			server := newTestServer(t, store)
 
 			url := "/api/v1/members"
 			request, err := http.NewRequest(http.MethodGet, url, nil)
@@ -637,7 +638,7 @@ func TestUpdateMemberAPI(t *testing.T) {
 			tc.buildStubs(store)
 
 			// start test server and send request
-			server := NewServer(store)
+			server := newTestServer(t, store)
 
 			// Marshal body data to JSON
 			data, err := json.Marshal(tc.body)
@@ -719,7 +720,7 @@ func TestDeleteMemberAPI(t *testing.T) {
 			tc.buildStubs(store)
 
 			// start test server and send request
-			server := NewServer(store)
+			server := newTestServer(t, store)
 
 			url := fmt.Sprintf("/api/v1/members/%s", tc.memberID)
 			request, err := http.NewRequest(http.MethodDelete, url, nil)
@@ -804,7 +805,7 @@ func TestDeleteMembersAPI(t *testing.T) {
 			tc.buildStubs(store)
 
 			// start test server and send request
-			server := NewServer(store)
+			server := newTestServer(t, store)
 
 			url := "/api/v1/members"
 			request, err := http.NewRequest(http.MethodDelete, url, nil)

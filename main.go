@@ -2,10 +2,11 @@ package main
 
 import (
 	"database/sql"
+	"log"
+
 	"github.com/ot07/coworker-backend/api"
 	db "github.com/ot07/coworker-backend/db/sqlc"
 	"github.com/ot07/coworker-backend/util"
-	"log"
 
 	_ "github.com/lib/pq"
 	_ "github.com/ot07/coworker-backend/docs"
@@ -26,7 +27,10 @@ func main() {
 	}
 
 	store := db.NewStore(conn)
-	server := api.NewServer(store)
+	server, err := api.NewServer(config, store)
+	if err != nil {
+		log.Fatal("cannot create server:", err)
+	}
 
 	err = server.Start(config.ServerAddress)
 	if err != nil {

@@ -17,7 +17,7 @@ type Querier interface {
 	DeleteMember(ctx context.Context, id uuid.UUID) error
 	DeleteMembers(ctx context.Context, dollar_1 []uuid.UUID) error
 	GetMember(ctx context.Context, id uuid.UUID) (Member, error)
-	GetUser(ctx context.Context, id uuid.UUID) (User, error)
+	GetUser(ctx context.Context, email string) (User, error)
 	ListMembers(ctx context.Context, arg ListMembersParams) ([]Member, error)
 	UpdateMember(ctx context.Context, arg UpdateMemberParams) (Member, error)
 }
