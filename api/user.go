@@ -33,6 +33,14 @@ func newUserResponse(user db.User) userResponse {
 	}
 }
 
+// @Summary      Create user
+// @Tags         users
+// @Param        body body createUserRequest true "User object"
+// @Success      200 {object} userResponse
+// @Failure      400 {object} errorResponse
+// @Failure      403 {object} errorResponse
+// @Failure      500 {object} errorResponse
+// @Router       /users [post]
 func (server *Server) createUser(c *fiber.Ctx) error {
 	req := new(createUserRequest)
 	if err := c.BodyParser(req); err != nil {
@@ -80,6 +88,16 @@ type loginUserResponse struct {
 	User        userResponse `json:"user"`
 }
 
+// @Summary      Login user
+// @Tags         users
+// @Param        body body loginUserRequest true "User object"
+// @Success      200 {object} loginUserResponse
+// @Failure      400 {object} errorResponse
+// @Failure      401 {object} errorResponse
+// @Failure      403 {object} errorResponse
+// @Failure      404 {object} errorResponse
+// @Failure      500 {object} errorResponse
+// @Router       /users/login [post]
 func (server *Server) loginUser(c *fiber.Ctx) error {
 	req := new(loginUserRequest)
 	if err := c.BodyParser(req); err != nil {
