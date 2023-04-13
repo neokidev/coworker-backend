@@ -56,7 +56,7 @@ func TestGetUser(t *testing.T) {
 	testQueries := New(tx)
 
 	user1 := createRandomUser(t, testQueries)
-	user2, err := testQueries.GetUser(context.Background(), user1.ID)
+	user2, err := testQueries.GetUser(context.Background(), user1.Email)
 	require.NoError(t, err)
 	require.NotEmpty(t, user2)
 

@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	mockdb "github.com/ot07/coworker-backend/db/mock"
 	db "github.com/ot07/coworker-backend/db/sqlc"
+	"github.com/ot07/coworker-backend/token"
 	"github.com/ot07/coworker-backend/util"
 	"github.com/stretchr/testify/require"
 )
@@ -27,12 +28,16 @@ func TestGetMemberAPI(t *testing.T) {
 	testCases := []struct {
 		name          string
 		memberID      string
+		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, response *http.Response)
 	}{
 		{
 			name:     "OK",
 			memberID: member.ID.String(),
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetMember(gomock.Any(), gomock.Eq(member.ID)).
@@ -45,8 +50,25 @@ func TestGetMemberAPI(t *testing.T) {
 			},
 		},
 		{
+			name:     "NoAuthorization",
+			memberID: member.ID.String(),
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetMember(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusUnauthorized, response.StatusCode)
+			},
+		},
+		{
 			name:     "NotFound",
 			memberID: member.ID.String(),
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetMember(gomock.Any(), gomock.Eq(member.ID)).
@@ -60,6 +82,9 @@ func TestGetMemberAPI(t *testing.T) {
 		{
 			name:     "InternalError",
 			memberID: member.ID.String(),
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetMember(gomock.Any(), gomock.Eq(member.ID)).
@@ -73,6 +98,9 @@ func TestGetMemberAPI(t *testing.T) {
 		{
 			name:     "InvalidID",
 			memberID: "InvalidID",
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetMember(gomock.Any(), gomock.Eq(member.ID)).
@@ -103,6 +131,7 @@ func TestGetMemberAPI(t *testing.T) {
 			request, err := http.NewRequest(http.MethodGet, url, nil)
 			require.NoError(t, err)
 
+			tc.setupAuth(t, request, server.tokenMaker)
 			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
 			tc.checkResponse(t, response)
 		})
@@ -122,6 +151,7 @@ func TestCreateMemberAPI(t *testing.T) {
 	testCases := []struct {
 		name          string
 		body          fiber.Map
+		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, response *http.Response)
 	}{
@@ -132,6 +162,9 @@ func TestCreateMemberAPI(t *testing.T) {
 				"first_name": member.FirstName,
 				"last_name":  member.LastName,
 				"email":      member.Email.String,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.CreateMemberParams{
@@ -152,11 +185,33 @@ func TestCreateMemberAPI(t *testing.T) {
 			},
 		},
 		{
+			name: "NoAuthorization",
+			body: fiber.Map{
+				"id":         member.ID,
+				"first_name": member.FirstName,
+				"last_name":  member.LastName,
+				"email":      member.Email.String,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					CreateMember(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusUnauthorized, response.StatusCode)
+			},
+		},
+		{
 			name: "OptionalFieldsNotFound",
 			body: fiber.Map{
 				"id":         member.ID,
 				"first_name": member.FirstName,
 				"last_name":  member.LastName,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.CreateMemberParams{
@@ -182,6 +237,9 @@ func TestCreateMemberAPI(t *testing.T) {
 				"last_name":  member.LastName,
 				"email":      member.Email.String,
 			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					CreateMember(gomock.Any(), gomock.Any()).
@@ -198,6 +256,9 @@ func TestCreateMemberAPI(t *testing.T) {
 				"last_name": member.LastName,
 				"email":     member.Email.String,
 			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					CreateMember(gomock.Any(), gomock.Any()).
@@ -213,6 +274,9 @@ func TestCreateMemberAPI(t *testing.T) {
 				"id":         member.ID,
 				"first_name": member.FirstName,
 				"email":      member.Email.String,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -231,6 +295,9 @@ func TestCreateMemberAPI(t *testing.T) {
 				"last_name":  member.LastName,
 				"email":      "InvalidEmail",
 			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					CreateMember(gomock.Any(), gomock.Any()).
@@ -247,6 +314,9 @@ func TestCreateMemberAPI(t *testing.T) {
 				"first_name": member.FirstName,
 				"last_name":  member.LastName,
 				"email":      member.Email.String,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.CreateMemberParams{
@@ -292,6 +362,7 @@ func TestCreateMemberAPI(t *testing.T) {
 
 			request.Header.Set("Content-Type", "application/json")
 
+			tc.setupAuth(t, request, server.tokenMaker)
 			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
 			tc.checkResponse(t, response)
 		})
@@ -315,6 +386,7 @@ func TestListMembersAPI(t *testing.T) {
 	testCases := []struct {
 		name          string
 		query         Query
+		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, response *http.Response)
 	}{
@@ -323,6 +395,9 @@ func TestListMembersAPI(t *testing.T) {
 			query: Query{
 				pageID:   1,
 				pageSize: n,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.ListMembersParams{
@@ -346,9 +421,33 @@ func TestListMembersAPI(t *testing.T) {
 			},
 		},
 		{
+			name: "NoAuthorization",
+			query: Query{
+				pageID:   1,
+				pageSize: n,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					ListMembers(gomock.Any(), gomock.Any()).
+					Times(0)
+
+				store.EXPECT().
+					CountMembers(gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusUnauthorized, response.StatusCode)
+			},
+		},
+		{
 			name: "PageIDNotFound",
 			query: Query{
 				pageSize: n,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -369,6 +468,9 @@ func TestListMembersAPI(t *testing.T) {
 				pageID:   0,
 				pageSize: n,
 			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					ListMembers(gomock.Any(), gomock.Any()).
@@ -386,6 +488,9 @@ func TestListMembersAPI(t *testing.T) {
 			name: "PageSizeNotFound",
 			query: Query{
 				pageID: 1,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -406,6 +511,9 @@ func TestListMembersAPI(t *testing.T) {
 				pageID:   1,
 				pageSize: 4,
 			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					ListMembers(gomock.Any(), gomock.Any()).
@@ -425,6 +533,9 @@ func TestListMembersAPI(t *testing.T) {
 				pageID:   1,
 				pageSize: 11,
 			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					ListMembers(gomock.Any(), gomock.Any()).
@@ -443,6 +554,9 @@ func TestListMembersAPI(t *testing.T) {
 			query: Query{
 				pageID:   1,
 				pageSize: n,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.ListMembersParams{
@@ -468,6 +582,9 @@ func TestListMembersAPI(t *testing.T) {
 			query: Query{
 				pageID:   1,
 				pageSize: n,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.ListMembersParams{
@@ -515,6 +632,7 @@ func TestListMembersAPI(t *testing.T) {
 			q.Add("page_size", fmt.Sprintf("%d", tc.query.pageSize))
 			request.URL.RawQuery = q.Encode()
 
+			tc.setupAuth(t, request, server.tokenMaker)
 			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
 			tc.checkResponse(t, response)
 		})
@@ -533,6 +651,7 @@ func TestUpdateMemberAPI(t *testing.T) {
 		name          string
 		memberID      string
 		body          fiber.Map
+		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, response *http.Response)
 	}{
@@ -543,6 +662,9 @@ func TestUpdateMemberAPI(t *testing.T) {
 				"first_name": member.FirstName,
 				"last_name":  member.LastName,
 				"email":      member.Email.String,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.UpdateMemberParams{
@@ -563,9 +685,31 @@ func TestUpdateMemberAPI(t *testing.T) {
 			},
 		},
 		{
+			name:     "NoAuthorization",
+			memberID: member.ID.String(),
+			body: fiber.Map{
+				"first_name": member.FirstName,
+				"last_name":  member.LastName,
+				"email":      member.Email.String,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					UpdateMember(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusUnauthorized, response.StatusCode)
+			},
+		},
+		{
 			name:     "OptionalFieldsNotFound",
 			memberID: member.ID.String(),
 			body:     fiber.Map{},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.UpdateMemberParams{
 					ID: member.ID,
@@ -589,6 +733,9 @@ func TestUpdateMemberAPI(t *testing.T) {
 				"last_name":  member.LastName,
 				"email":      "InvalidEmail",
 			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					UpdateMember(gomock.Any(), gomock.Any()).
@@ -605,6 +752,9 @@ func TestUpdateMemberAPI(t *testing.T) {
 				"first_name": member.FirstName,
 				"last_name":  member.LastName,
 				"email":      member.Email.String,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.UpdateMemberParams{
@@ -650,6 +800,7 @@ func TestUpdateMemberAPI(t *testing.T) {
 
 			request.Header.Set("Content-Type", "application/json")
 
+			tc.setupAuth(t, request, server.tokenMaker)
 			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
 			tc.checkResponse(t, response)
 		})
@@ -664,12 +815,16 @@ func TestDeleteMemberAPI(t *testing.T) {
 	testCases := []struct {
 		name          string
 		memberID      string
+		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, response *http.Response)
 	}{
 		{
 			name:     "OK",
 			memberID: member.ID.String(),
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					DeleteMember(gomock.Any(), gomock.Eq(member.ID)).
@@ -681,8 +836,25 @@ func TestDeleteMemberAPI(t *testing.T) {
 			},
 		},
 		{
+			name:     "NoAuthorization",
+			memberID: member.ID.String(),
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					DeleteMember(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusUnauthorized, response.StatusCode)
+			},
+		},
+		{
 			name:     "InvalidID",
 			memberID: "InvalidID",
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					DeleteMember(gomock.Any(), gomock.Eq(member.ID)).
@@ -695,6 +867,9 @@ func TestDeleteMemberAPI(t *testing.T) {
 		{
 			name:     "DeleteMemberError",
 			memberID: member.ID.String(),
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					DeleteMember(gomock.Any(), gomock.Eq(member.ID)).
@@ -726,6 +901,7 @@ func TestDeleteMemberAPI(t *testing.T) {
 			request, err := http.NewRequest(http.MethodDelete, url, nil)
 			require.NoError(t, err)
 
+			tc.setupAuth(t, request, server.tokenMaker)
 			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
 			tc.checkResponse(t, response)
 		})
@@ -746,6 +922,7 @@ func TestDeleteMembersAPI(t *testing.T) {
 	testCases := []struct {
 		name          string
 		query         Query
+		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, response *http.Response)
 	}{
@@ -753,6 +930,9 @@ func TestDeleteMembersAPI(t *testing.T) {
 			name: "OK",
 			query: Query{
 				IDs: memberIDsToCommaSeparatedString(memberIDs),
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -765,8 +945,27 @@ func TestDeleteMembersAPI(t *testing.T) {
 			},
 		},
 		{
+			name: "NoAuthorization",
+			query: Query{
+				IDs: memberIDsToCommaSeparatedString(memberIDs),
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					DeleteMembers(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusUnauthorized, response.StatusCode)
+			},
+		},
+		{
 			name:  "IDsNotFound",
 			query: Query{},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					DeleteMembers(gomock.Any(), gomock.Eq(memberIDs)).
@@ -780,6 +979,9 @@ func TestDeleteMembersAPI(t *testing.T) {
 			name: "InvalidIDs",
 			query: Query{
 				IDs: memberIDsToCommaSeparatedString(memberIDs) + ",InvalidID",
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, util.RandomUUID(), time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -816,6 +1018,7 @@ func TestDeleteMembersAPI(t *testing.T) {
 			q.Add("ids", fmt.Sprintf("%s", tc.query.IDs))
 			request.URL.RawQuery = q.Encode()
 
+			tc.setupAuth(t, request, server.tokenMaker)
 			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
 			tc.checkResponse(t, response)
 		})
