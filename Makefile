@@ -10,8 +10,14 @@ dropdb:
 migrateup:
 	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/coworker?sslmode=disable" -verbose up
 
+migrateup1:
+	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/coworker?sslmode=disable" -verbose up 1
+
 migratedown:
 	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/coworker?sslmode=disable" -verbose down
+
+migratedown1:
+	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/coworker?sslmode=disable" -verbose down 1
 
 migrateforce:
 	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/coworker?sslmode=disable" force 1
@@ -31,4 +37,4 @@ mock:
 swag:
 	swag init --pd
 
-.PHONY: postgres createdb dropdb migrateup migratedown migrateforce sqlc test server mock
+.PHONY: postgres createdb dropdb migrateup migratedown mmigrateup1 migratedown1 igrateforce sqlc test server mock

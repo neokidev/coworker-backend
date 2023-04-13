@@ -1,27 +1,55 @@
 package api
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/swagger"
 	db "github.com/ot07/coworker-backend/db/sqlc"
+	"github.com/ot07/coworker-backend/token"
+	"github.com/ot07/coworker-backend/util"
 )
 
 // Server serves HTTP requests for this app service.
 type Server struct {
-	store db.Store
-	app   *fiber.App
+	config     util.Config
+	store      db.Store
+	tokenMaker token.Maker
+	app        *fiber.App
 }
 
 // NewServer creates a new HTTP server and setup routing.
-func NewServer(store db.Store) *Server {
+func NewServer(config util.Config, store db.Store) (*Server, error) {
+	tokenMaker, err := token.NewPasetoMaker(config.TokenSymmetricKey)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create token maker: %w", err)
+	}
+
 	app := fiber.New()
 	app.Use(cors.New())
 
-	server := &Server{store: store, app: app}
+	server := &Server{
+		config:     config,
+		store:      store,
+		tokenMaker: tokenMaker,
+		app:        app,
+	}
+
+	server.setupRouter()
+	return server, nil
+}
+
+func (server *Server) setupRouter() {
+	app := server.app
 
 	api := app.Group("/api")
 	v1 := api.Group("/v1")
+
+	v1.Post("/users", server.createUser)
+	v1.Post("/users/login", server.loginUser)
+
+	v1.Use(authMiddleware(server.tokenMaker))
 
 	v1.Post("/members", server.createMember)
 	v1.Get("/members/:id", server.getMember)
@@ -31,8 +59,6 @@ func NewServer(store db.Store) *Server {
 	v1.Delete("/members", server.deleteMembers)
 
 	app.Get("/swagger/*", swagger.HandlerDefault)
-
-	return server
 }
 
 // Start runs the HTTP server on a specific address.
