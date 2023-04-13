@@ -17,6 +17,23 @@ definitions:
     - id
     - last_name
     type: object
+  api.createUserRequest:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      password:
+        minLength: 14
+        type: string
+    required:
+    - email
+    - first_name
+    - last_name
+    - password
+    type: object
   api.errorResponse:
     properties:
       error:
@@ -42,6 +59,24 @@ definitions:
       total_count:
         type: integer
     type: object
+  api.loginUserRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 14
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  api.loginUserResponse:
+    properties:
+      access_token:
+        type: string
+      user:
+        $ref: '#/definitions/api.userResponse'
+    type: object
   api.memberResponse:
     properties:
       created_at:
@@ -64,6 +99,19 @@ definitions:
         type: string
       last_name:
         type: string
+    type: object
+  api.userResponse:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: string
+      last_name:
+        type: string
+    required:
+    - email
     type: object
 info:
   contact: {}
@@ -218,4 +266,70 @@ paths:
       summary: Update member
       tags:
       - members
+  /users:
+    post:
+      parameters:
+      - description: User object
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.createUserRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.userResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      summary: Create user
+      tags:
+      - users
+  /users/login:
+    post:
+      parameters:
+      - description: User object
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.loginUserRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.loginUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      summary: Login user
+      tags:
+      - users
 swagger: "2.0"
