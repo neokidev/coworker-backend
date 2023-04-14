@@ -107,6 +107,8 @@ func TestAuthMiddleware(t *testing.T) {
 
 			tc.setupAuth(t, request, server.tokenMaker)
 			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
+			require.NoError(t, err)
+
 			tc.checkResponse(t, response)
 
 		})

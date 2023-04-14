@@ -2,13 +2,13 @@ package api
 
 import (
 	"database/sql"
-	_ "database/sql"
-	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
-	db "github.com/ot07/coworker-backend/db/sqlc"
 	"math"
 	"strings"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
+	db "github.com/ot07/coworker-backend/db/sqlc"
 )
 
 type createMemberRequest struct {
