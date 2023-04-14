@@ -133,6 +133,8 @@ func TestGetMemberAPI(t *testing.T) {
 
 			tc.setupAuth(t, request, server.tokenMaker)
 			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
+			require.NoError(t, err)
+
 			tc.checkResponse(t, response)
 		})
 	}
@@ -364,6 +366,8 @@ func TestCreateMemberAPI(t *testing.T) {
 
 			tc.setupAuth(t, request, server.tokenMaker)
 			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
+			require.NoError(t, err)
+
 			tc.checkResponse(t, response)
 		})
 	}
@@ -634,6 +638,8 @@ func TestListMembersAPI(t *testing.T) {
 
 			tc.setupAuth(t, request, server.tokenMaker)
 			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
+			require.NoError(t, err)
+
 			tc.checkResponse(t, response)
 		})
 	}
@@ -802,6 +808,8 @@ func TestUpdateMemberAPI(t *testing.T) {
 
 			tc.setupAuth(t, request, server.tokenMaker)
 			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
+			require.NoError(t, err)
+
 			tc.checkResponse(t, response)
 		})
 	}
@@ -903,6 +911,8 @@ func TestDeleteMemberAPI(t *testing.T) {
 
 			tc.setupAuth(t, request, server.tokenMaker)
 			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
+			require.NoError(t, err)
+
 			tc.checkResponse(t, response)
 		})
 	}
@@ -1015,11 +1025,13 @@ func TestDeleteMembersAPI(t *testing.T) {
 
 			// Add query parameters to request URL
 			q := request.URL.Query()
-			q.Add("ids", fmt.Sprintf("%s", tc.query.IDs))
+			q.Add("ids", tc.query.IDs)
 			request.URL.RawQuery = q.Encode()
 
 			tc.setupAuth(t, request, server.tokenMaker)
 			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
+			require.NoError(t, err)
+
 			tc.checkResponse(t, response)
 		})
 	}
