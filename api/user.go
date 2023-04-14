@@ -2,6 +2,7 @@ package api
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -84,8 +85,7 @@ type loginUserRequest struct {
 }
 
 type loginUserResponse struct {
-	AccessToken string       `json:"access_token"`
-	User        userResponse `json:"user"`
+	Message string `json:"message"`
 }
 
 // @Summary      Login user
@@ -94,7 +94,6 @@ type loginUserResponse struct {
 // @Success      200 {object} loginUserResponse
 // @Failure      400 {object} errorResponse
 // @Failure      401 {object} errorResponse
-// @Failure      403 {object} errorResponse
 // @Failure      404 {object} errorResponse
 // @Failure      500 {object} errorResponse
 // @Router       /users/login [post]
@@ -126,8 +125,16 @@ func (server *Server) loginUser(c *fiber.Ctx) error {
 	}
 
 	rsp := loginUserResponse{
-		AccessToken: accessToken,
-		User:        newUserResponse(user),
+		Message: "Great job! You've successfully logged in!",
 	}
+
+	c.Cookie(&fiber.Cookie{
+		Name:     accessTokenCookieKey,
+		Value:    fmt.Sprintf("%s %s", accessTokenTypeBearer, accessToken),
+		HTTPOnly: true,
+		SameSite: "none",
+		Secure:   true,
+	})
+
 	return c.Status(fiber.StatusOK).JSON(rsp)
 }
