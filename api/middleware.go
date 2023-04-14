@@ -10,28 +10,28 @@ import (
 )
 
 const (
-	authorizationHeaderKey  = "authorization"
-	authorizationTypeBearer = "bearer"
-	authorizationPayloadKey = "authorization_payload"
+	accessTokenCookieKey  = "access_token"
+	accessTokenTypeBearer = "bearer"
+	accessTokenPayloadKey = "authorization_payload"
 )
 
 func authMiddleware(tokenMaker token.Maker) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		authorizationHeader := c.Get(authorizationHeaderKey)
-		if len(authorizationHeader) == 0 {
-			err := errors.New("authorization header is not provided")
+		accessTokenWithType := c.Cookies(accessTokenCookieKey)
+		if len(accessTokenWithType) == 0 {
+			err := errors.New("access token not found")
 			return c.Status(fiber.StatusUnauthorized).JSON(newErrorResponse(err))
 		}
 
-		fields := strings.Fields(authorizationHeader)
+		fields := strings.Fields(accessTokenWithType)
 		if len(fields) < 2 {
-			err := errors.New("invalid authorization header format")
+			err := errors.New("invalid access token format")
 			return c.Status(fiber.StatusUnauthorized).JSON(newErrorResponse(err))
 		}
 
-		authorizationType := strings.ToLower(fields[0])
-		if authorizationType != authorizationTypeBearer {
-			err := fmt.Errorf("unsupported authorization type %s", authorizationType)
+		accessTokenType := strings.ToLower(fields[0])
+		if accessTokenType != accessTokenTypeBearer {
+			err := fmt.Errorf("unsupported access token type %s", accessTokenType)
 			return c.Status(fiber.StatusUnauthorized).JSON(newErrorResponse(err))
 		}
 
@@ -41,7 +41,7 @@ func authMiddleware(tokenMaker token.Maker) fiber.Handler {
 			return c.Status(fiber.StatusUnauthorized).JSON(newErrorResponse(err))
 		}
 
-		c.Locals(authorizationPayloadKey, payload)
+		c.Locals(accessTokenPayloadKey, payload)
 		return c.Next()
 	}
 }

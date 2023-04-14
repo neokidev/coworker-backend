@@ -2,16 +2,13 @@ package api
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	db "github.com/ot07/coworker-backend/db/sqlc"
 	"github.com/ot07/coworker-backend/util"
-)
-
-const (
-	accessTokenCookieKey = "access_token"
 )
 
 type createUserRequest struct {
@@ -133,7 +130,7 @@ func (server *Server) loginUser(c *fiber.Ctx) error {
 
 	c.Cookie(&fiber.Cookie{
 		Name:     accessTokenCookieKey,
-		Value:    authorizationTypeBearer + " " + accessToken,
+		Value:    fmt.Sprintf("%s %s", accessTokenTypeBearer, accessToken),
 		HTTPOnly: true,
 		SameSite: "none",
 		Secure:   true,
