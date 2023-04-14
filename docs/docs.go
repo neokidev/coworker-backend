@@ -322,12 +322,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/api.errorResponse"
                         }
                     },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/api.errorResponse"
-                        }
-                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -451,11 +445,8 @@ const docTemplate = `{
         "api.loginUserResponse": {
             "type": "object",
             "properties": {
-                "access_token": {
+                "message": {
                     "type": "string"
-                },
-                "user": {
-                    "$ref": "#/definitions/api.userResponse"
                 }
             }
         },

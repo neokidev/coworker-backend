@@ -72,10 +72,8 @@ definitions:
     type: object
   api.loginUserResponse:
     properties:
-      access_token:
+      message:
         type: string
-      user:
-        $ref: '#/definitions/api.userResponse'
     type: object
   api.memberResponse:
     properties:
@@ -315,10 +313,6 @@ paths:
             $ref: '#/definitions/api.errorResponse'
         "401":
           description: Unauthorized
-          schema:
-            $ref: '#/definitions/api.errorResponse'
-        "403":
-          description: Forbidden
           schema:
             $ref: '#/definitions/api.errorResponse'
         "404":
