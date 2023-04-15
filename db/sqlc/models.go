@@ -19,6 +19,13 @@ type Member struct {
 	CreatedAt time.Time      `json:"created_at"`
 }
 
+type Session struct {
+	ID           uuid.UUID `json:"id"`
+	UserID       uuid.UUID `json:"user_id"`
+	SessionToken uuid.UUID `json:"session_token"`
+	ExpiredAt    time.Time `json:"expired_at"`
+}
+
 type User struct {
 	ID                uuid.UUID `json:"id"`
 	FirstName         string    `json:"first_name"`

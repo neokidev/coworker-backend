@@ -13,10 +13,13 @@ import (
 type Querier interface {
 	CountMembers(ctx context.Context) (int64, error)
 	CreateMember(ctx context.Context, arg CreateMemberParams) (Member, error)
+	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteMember(ctx context.Context, id uuid.UUID) error
 	DeleteMembers(ctx context.Context, dollar_1 []uuid.UUID) error
+	DeleteSession(ctx context.Context, sessionToken uuid.UUID) error
 	GetMember(ctx context.Context, id uuid.UUID) (Member, error)
+	GetSession(ctx context.Context, sessionToken uuid.UUID) (Session, error)
 	GetUser(ctx context.Context, email string) (User, error)
 	ListMembers(ctx context.Context, arg ListMembersParams) ([]Member, error)
 	UpdateMember(ctx context.Context, arg UpdateMemberParams) (Member, error)

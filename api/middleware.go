@@ -1,47 +1,50 @@
 package api
 
 import (
+	"database/sql"
 	"errors"
-	"fmt"
-	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/ot07/coworker-backend/token"
 )
 
 const (
-	accessTokenCookieKey  = "access_token"
-	accessTokenTypeBearer = "bearer"
-	accessTokenPayloadKey = "authorization_payload"
+	sessionTokenKey = "session_token"
 )
 
-func authMiddleware(tokenMaker token.Maker) fiber.Handler {
+func authMiddleware(server *Server) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		accessTokenWithType := c.Cookies(accessTokenCookieKey)
-		if len(accessTokenWithType) == 0 {
-			err := errors.New("access token not found")
+		sessionToken := c.Cookies(sessionTokenKey)
+		if len(sessionToken) == 0 {
+			err := errors.New("session token not found")
 			return c.Status(fiber.StatusUnauthorized).JSON(newErrorResponse(err))
 		}
 
-		fields := strings.Fields(accessTokenWithType)
-		if len(fields) < 2 {
-			err := errors.New("invalid access token format")
-			return c.Status(fiber.StatusUnauthorized).JSON(newErrorResponse(err))
-		}
-
-		accessTokenType := strings.ToLower(fields[0])
-		if accessTokenType != accessTokenTypeBearer {
-			err := fmt.Errorf("unsupported access token type %s", accessTokenType)
-			return c.Status(fiber.StatusUnauthorized).JSON(newErrorResponse(err))
-		}
-
-		accessToken := fields[1]
-		payload, err := tokenMaker.VerifyToken(accessToken)
+		parsedSessionToken, err := uuid.Parse(sessionToken)
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(newErrorResponse(err))
 		}
 
-		c.Locals(accessTokenPayloadKey, payload)
+		session, err := server.store.GetSession(c.Context(), parsedSessionToken)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return c.Status(fiber.StatusUnauthorized).JSON(newErrorResponse(err))
+			}
+			return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
+		}
+
+		token := token.Token{
+			ID:        session.ID,
+			ExpiredAt: session.ExpiredAt,
+		}
+
+		err = token.Valid()
+		if err != nil {
+			return c.Status(fiber.StatusUnauthorized).JSON(newErrorResponse(err))
+		}
+
+		c.Locals(sessionTokenKey, parsedSessionToken)
 		return c.Next()
 	}
 }

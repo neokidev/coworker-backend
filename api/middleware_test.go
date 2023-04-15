@@ -1,32 +1,26 @@
 package api
 
 import (
-	"fmt"
+	"database/sql"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
-	"github.com/ot07/coworker-backend/token"
+	"github.com/golang/mock/gomock"
+	mockdb "github.com/ot07/coworker-backend/db/mock"
+	db "github.com/ot07/coworker-backend/db/sqlc"
 	"github.com/ot07/coworker-backend/util"
 	"github.com/stretchr/testify/require"
 )
 
-func addAccessTokenInCookie(
-	t *testing.T,
+func addSessionTokenInCookie(
 	request *http.Request,
-	tokenMaker token.Maker,
-	accessTokenType string,
-	userID uuid.UUID,
-	duration time.Duration,
+	sessionToken string,
 ) {
-	token, err := tokenMaker.CreateToken(userID, duration)
-	require.NoError(t, err)
-
 	cookie := &http.Cookie{
-		Name:     accessTokenCookieKey,
-		Value:    fmt.Sprintf("%s %s", accessTokenType, token),
+		Name:     sessionTokenKey,
+		Value:    sessionToken,
 		HttpOnly: true,
 		SameSite: http.SameSiteNoneMode,
 		Secure:   true,
@@ -35,16 +29,32 @@ func addAccessTokenInCookie(
 	request.AddCookie(cookie)
 }
 
+func buildValidSessionStubs(store *mockdb.MockStore, session db.Session) {
+	store.EXPECT().
+		GetSession(gomock.Any(), gomock.Eq(session.SessionToken)).
+		Times(1).
+		Return(session, nil)
+}
+
 func TestAuthMiddleware(t *testing.T) {
+	t.Parallel()
+
+	session := randomSession()
+	expiredSession := randomExpiredSession()
+
 	testCases := []struct {
 		name          string
-		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
+		setupAuth     func(request *http.Request)
+		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, response *http.Response)
 	}{
 		{
 			name: "OK",
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
 			},
 			checkResponse: func(t *testing.T, response *http.Response) {
 				require.Equal(t, http.StatusOK, response.StatusCode)
@@ -52,25 +62,26 @@ func TestAuthMiddleware(t *testing.T) {
 		},
 		{
 			name: "NoAuthorization",
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+			setupAuth: func(request *http.Request) {
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetSession(gomock.Any(), gomock.Any()).
+					Times(0)
 			},
 			checkResponse: func(t *testing.T, response *http.Response) {
 				require.Equal(t, http.StatusUnauthorized, response.StatusCode)
 			},
 		},
 		{
-			name: "UnsupportedAuthorization",
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, "unsupported", util.RandomUUID(), time.Minute)
+			name: "InvalidTokenFormat",
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, "invalid")
 			},
-			checkResponse: func(t *testing.T, response *http.Response) {
-				require.Equal(t, http.StatusUnauthorized, response.StatusCode)
-			},
-		},
-		{
-			name: "InvalidAuthorizationFormat",
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, "", util.RandomUUID(), time.Minute)
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetSession(gomock.Any(), gomock.Any()).
+					Times(0)
 			},
 			checkResponse: func(t *testing.T, response *http.Response) {
 				require.Equal(t, http.StatusUnauthorized, response.StatusCode)
@@ -78,11 +89,29 @@ func TestAuthMiddleware(t *testing.T) {
 		},
 		{
 			name: "ExpiredToken",
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), -time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, expiredSession.SessionToken.String())
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, expiredSession)
 			},
 			checkResponse: func(t *testing.T, response *http.Response) {
 				require.Equal(t, http.StatusUnauthorized, response.StatusCode)
+			},
+		},
+		{
+			name: "InternalError",
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetSession(gomock.Any(), gomock.Eq(session.SessionToken)).
+					Times(1).
+					Return(db.Session{}, sql.ErrConnDone)
+			},
+			checkResponse: func(t *testing.T, response *http.Response) {
+				require.Equal(t, http.StatusInternalServerError, response.StatusCode)
 			},
 		},
 	}
@@ -91,12 +120,20 @@ func TestAuthMiddleware(t *testing.T) {
 		tc := testCases[i]
 
 		t.Run(tc.name, func(t *testing.T) {
-			server := newTestServer(t, nil)
+			t.Parallel()
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			store := mockdb.NewMockStore(ctrl)
+			tc.buildStubs(store)
+
+			server := newTestServer(t, store)
 
 			authPath := "/auth"
 			server.app.Get(
 				authPath,
-				authMiddleware(server.tokenMaker),
+				authMiddleware(server),
 				func(c *fiber.Ctx) error {
 					return c.SendStatus(fiber.StatusOK)
 				},
@@ -105,12 +142,29 @@ func TestAuthMiddleware(t *testing.T) {
 			request, err := http.NewRequest(http.MethodGet, authPath, nil)
 			require.NoError(t, err)
 
-			tc.setupAuth(t, request, server.tokenMaker)
+			tc.setupAuth(request)
 			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
 			require.NoError(t, err)
 
 			tc.checkResponse(t, response)
-
 		})
+	}
+}
+
+func randomSession() db.Session {
+	return db.Session{
+		ID:           util.RandomUUID(),
+		UserID:       util.RandomUUID(),
+		SessionToken: util.RandomUUID(),
+		ExpiredAt:    time.Now().Add(time.Minute),
+	}
+}
+
+func randomExpiredSession() db.Session {
+	return db.Session{
+		ID:           util.RandomUUID(),
+		UserID:       util.RandomUUID(),
+		SessionToken: util.RandomUUID(),
+		ExpiredAt:    time.Now().Add(-time.Minute),
 	}
 }
