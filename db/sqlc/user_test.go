@@ -56,7 +56,29 @@ func TestGetUser(t *testing.T) {
 	testQueries := New(tx)
 
 	user1 := createRandomUser(t, testQueries)
-	user2, err := testQueries.GetUser(context.Background(), user1.Email)
+	user2, err := testQueries.GetUser(context.Background(), user1.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, user2)
+
+	require.Equal(t, user1.ID, user2.ID)
+	require.Equal(t, user1.FirstName, user2.FirstName)
+	require.Equal(t, user1.LastName, user2.LastName)
+	require.Equal(t, user1.Email, user2.Email)
+	require.Equal(t, user1.HashedPassword, user2.HashedPassword)
+	require.WithinDuration(t, user1.PasswordChangedAt, user2.PasswordChangedAt, time.Second)
+	require.WithinDuration(t, user1.CreatedAt, user2.CreatedAt, time.Second)
+}
+
+func TestGetUserByEmail(t *testing.T) {
+	t.Parallel()
+
+	tx := beginTransaction(t)
+	defer rollbackTransaction(t, tx)
+
+	testQueries := New(tx)
+
+	user1 := createRandomUser(t, testQueries)
+	user2, err := testQueries.GetUserByEmail(context.Background(), user1.Email)
 	require.NoError(t, err)
 	require.NotEmpty(t, user2)
 
