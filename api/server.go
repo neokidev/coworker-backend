@@ -1,39 +1,29 @@
 package api
 
 import (
-	"fmt"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/swagger"
 	db "github.com/ot07/coworker-backend/db/sqlc"
-	"github.com/ot07/coworker-backend/token"
 	"github.com/ot07/coworker-backend/util"
 )
 
 // Server serves HTTP requests for this app service.
 type Server struct {
-	config     util.Config
-	store      db.Store
-	tokenMaker token.Maker
-	app        *fiber.App
+	config util.Config
+	store  db.Store
+	app    *fiber.App
 }
 
 // NewServer creates a new HTTP server and setup routing.
 func NewServer(config util.Config, store db.Store) (*Server, error) {
-	tokenMaker, err := token.NewPasetoMaker(config.TokenSymmetricKey)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create token maker: %w", err)
-	}
-
 	app := fiber.New()
 	app.Use(cors.New())
 
 	server := &Server{
-		config:     config,
-		store:      store,
-		tokenMaker: tokenMaker,
-		app:        app,
+		config: config,
+		store:  store,
+		app:    app,
 	}
 
 	server.setupRouter()
@@ -49,8 +39,9 @@ func (server *Server) setupRouter() {
 	v1.Post("/users", server.createUser)
 	v1.Post("/users/login", server.loginUser)
 
-	v1.Use(authMiddleware(server.tokenMaker))
+	v1.Use(authMiddleware(server))
 
+	v1.Post("/users/logout", server.logoutUser)
 	v1.Post("/members", server.createMember)
 	v1.Get("/members/:id", server.getMember)
 	v1.Get("/members", server.listMembers)

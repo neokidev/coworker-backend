@@ -15,7 +15,6 @@ import (
 	"github.com/google/uuid"
 	mockdb "github.com/ot07/coworker-backend/db/mock"
 	db "github.com/ot07/coworker-backend/db/sqlc"
-	"github.com/ot07/coworker-backend/token"
 	"github.com/ot07/coworker-backend/util"
 	"github.com/stretchr/testify/require"
 )
@@ -23,22 +22,25 @@ import (
 func TestGetMemberAPI(t *testing.T) {
 	t.Parallel()
 
+	session := randomSession()
 	member := randomMember()
 
 	testCases := []struct {
 		name          string
 		memberID      string
-		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
+		setupAuth     func(request *http.Request)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, response *http.Response)
 	}{
 		{
 			name:     "OK",
 			memberID: member.ID.String(),
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				store.EXPECT().
 					GetMember(gomock.Any(), gomock.Eq(member.ID)).
 					Times(1).
@@ -52,7 +54,7 @@ func TestGetMemberAPI(t *testing.T) {
 		{
 			name:     "NoAuthorization",
 			memberID: member.ID.String(),
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+			setupAuth: func(request *http.Request) {
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -66,10 +68,12 @@ func TestGetMemberAPI(t *testing.T) {
 		{
 			name:     "NotFound",
 			memberID: member.ID.String(),
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				store.EXPECT().
 					GetMember(gomock.Any(), gomock.Eq(member.ID)).
 					Times(1).
@@ -82,10 +86,12 @@ func TestGetMemberAPI(t *testing.T) {
 		{
 			name:     "InternalError",
 			memberID: member.ID.String(),
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				store.EXPECT().
 					GetMember(gomock.Any(), gomock.Eq(member.ID)).
 					Times(1).
@@ -98,10 +104,12 @@ func TestGetMemberAPI(t *testing.T) {
 		{
 			name:     "InvalidID",
 			memberID: "InvalidID",
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				store.EXPECT().
 					GetMember(gomock.Any(), gomock.Eq(member.ID)).
 					Times(0)
@@ -131,7 +139,7 @@ func TestGetMemberAPI(t *testing.T) {
 			request, err := http.NewRequest(http.MethodGet, url, nil)
 			require.NoError(t, err)
 
-			tc.setupAuth(t, request, server.tokenMaker)
+			tc.setupAuth(request)
 			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
 			require.NoError(t, err)
 
@@ -143,6 +151,7 @@ func TestGetMemberAPI(t *testing.T) {
 func TestCreateMemberAPI(t *testing.T) {
 	t.Parallel()
 
+	session := randomSession()
 	member := randomMember()
 	memberOnlyRequiredFields := db.Member{
 		ID:        member.ID,
@@ -153,7 +162,7 @@ func TestCreateMemberAPI(t *testing.T) {
 	testCases := []struct {
 		name          string
 		body          fiber.Map
-		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
+		setupAuth     func(request *http.Request)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, response *http.Response)
 	}{
@@ -165,10 +174,12 @@ func TestCreateMemberAPI(t *testing.T) {
 				"last_name":  member.LastName,
 				"email":      member.Email.String,
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				arg := db.CreateMemberParams{
 					ID:        member.ID,
 					FirstName: member.FirstName,
@@ -194,7 +205,7 @@ func TestCreateMemberAPI(t *testing.T) {
 				"last_name":  member.LastName,
 				"email":      member.Email.String,
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+			setupAuth: func(request *http.Request) {
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -212,10 +223,12 @@ func TestCreateMemberAPI(t *testing.T) {
 				"first_name": member.FirstName,
 				"last_name":  member.LastName,
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				arg := db.CreateMemberParams{
 					ID:        member.ID,
 					FirstName: member.FirstName,
@@ -239,10 +252,12 @@ func TestCreateMemberAPI(t *testing.T) {
 				"last_name":  member.LastName,
 				"email":      member.Email.String,
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				store.EXPECT().
 					CreateMember(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -258,10 +273,12 @@ func TestCreateMemberAPI(t *testing.T) {
 				"last_name": member.LastName,
 				"email":     member.Email.String,
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				store.EXPECT().
 					CreateMember(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -277,10 +294,12 @@ func TestCreateMemberAPI(t *testing.T) {
 				"first_name": member.FirstName,
 				"email":      member.Email.String,
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				store.EXPECT().
 					CreateMember(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -297,10 +316,12 @@ func TestCreateMemberAPI(t *testing.T) {
 				"last_name":  member.LastName,
 				"email":      "InvalidEmail",
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				store.EXPECT().
 					CreateMember(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -317,10 +338,12 @@ func TestCreateMemberAPI(t *testing.T) {
 				"last_name":  member.LastName,
 				"email":      member.Email.String,
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				arg := db.CreateMemberParams{
 					ID:        member.ID,
 					FirstName: member.FirstName,
@@ -364,7 +387,7 @@ func TestCreateMemberAPI(t *testing.T) {
 
 			request.Header.Set("Content-Type", "application/json")
 
-			tc.setupAuth(t, request, server.tokenMaker)
+			tc.setupAuth(request)
 			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
 			require.NoError(t, err)
 
@@ -375,6 +398,8 @@ func TestCreateMemberAPI(t *testing.T) {
 
 func TestListMembersAPI(t *testing.T) {
 	t.Parallel()
+
+	session := randomSession()
 
 	n := 5
 	members := make([]db.Member, n)
@@ -390,7 +415,7 @@ func TestListMembersAPI(t *testing.T) {
 	testCases := []struct {
 		name          string
 		query         Query
-		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
+		setupAuth     func(request *http.Request)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, response *http.Response)
 	}{
@@ -400,10 +425,12 @@ func TestListMembersAPI(t *testing.T) {
 				pageID:   1,
 				pageSize: n,
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				arg := db.ListMembersParams{
 					Limit:  int32(n),
 					Offset: 0,
@@ -430,7 +457,7 @@ func TestListMembersAPI(t *testing.T) {
 				pageID:   1,
 				pageSize: n,
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+			setupAuth: func(request *http.Request) {
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -450,10 +477,12 @@ func TestListMembersAPI(t *testing.T) {
 			query: Query{
 				pageSize: n,
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				store.EXPECT().
 					ListMembers(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -472,10 +501,12 @@ func TestListMembersAPI(t *testing.T) {
 				pageID:   0,
 				pageSize: n,
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				store.EXPECT().
 					ListMembers(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -493,10 +524,12 @@ func TestListMembersAPI(t *testing.T) {
 			query: Query{
 				pageID: 1,
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				store.EXPECT().
 					ListMembers(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -515,10 +548,12 @@ func TestListMembersAPI(t *testing.T) {
 				pageID:   1,
 				pageSize: 4,
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				store.EXPECT().
 					ListMembers(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -537,10 +572,12 @@ func TestListMembersAPI(t *testing.T) {
 				pageID:   1,
 				pageSize: 11,
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				store.EXPECT().
 					ListMembers(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -559,10 +596,12 @@ func TestListMembersAPI(t *testing.T) {
 				pageID:   1,
 				pageSize: n,
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				arg := db.ListMembersParams{
 					Limit:  int32(n),
 					Offset: 0,
@@ -587,10 +626,12 @@ func TestListMembersAPI(t *testing.T) {
 				pageID:   1,
 				pageSize: n,
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				arg := db.ListMembersParams{
 					Limit:  int32(n),
 					Offset: 0,
@@ -636,7 +677,7 @@ func TestListMembersAPI(t *testing.T) {
 			q.Add("page_size", fmt.Sprintf("%d", tc.query.pageSize))
 			request.URL.RawQuery = q.Encode()
 
-			tc.setupAuth(t, request, server.tokenMaker)
+			tc.setupAuth(request)
 			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
 			require.NoError(t, err)
 
@@ -648,6 +689,7 @@ func TestListMembersAPI(t *testing.T) {
 func TestUpdateMemberAPI(t *testing.T) {
 	t.Parallel()
 
+	session := randomSession()
 	member := randomMember()
 	memberOnlyRequiredFields := db.Member{
 		ID: member.ID,
@@ -657,7 +699,7 @@ func TestUpdateMemberAPI(t *testing.T) {
 		name          string
 		memberID      string
 		body          fiber.Map
-		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
+		setupAuth     func(request *http.Request)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, response *http.Response)
 	}{
@@ -669,10 +711,12 @@ func TestUpdateMemberAPI(t *testing.T) {
 				"last_name":  member.LastName,
 				"email":      member.Email.String,
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				arg := db.UpdateMemberParams{
 					ID:        member.ID,
 					FirstName: sql.NullString{String: member.FirstName, Valid: true},
@@ -698,7 +742,7 @@ func TestUpdateMemberAPI(t *testing.T) {
 				"last_name":  member.LastName,
 				"email":      member.Email.String,
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+			setupAuth: func(request *http.Request) {
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -713,10 +757,12 @@ func TestUpdateMemberAPI(t *testing.T) {
 			name:     "OptionalFieldsNotFound",
 			memberID: member.ID.String(),
 			body:     fiber.Map{},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				arg := db.UpdateMemberParams{
 					ID: member.ID,
 				}
@@ -739,10 +785,12 @@ func TestUpdateMemberAPI(t *testing.T) {
 				"last_name":  member.LastName,
 				"email":      "InvalidEmail",
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				store.EXPECT().
 					UpdateMember(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -759,10 +807,12 @@ func TestUpdateMemberAPI(t *testing.T) {
 				"last_name":  member.LastName,
 				"email":      member.Email.String,
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				arg := db.UpdateMemberParams{
 					ID:        member.ID,
 					FirstName: sql.NullString{String: member.FirstName, Valid: true},
@@ -806,7 +856,7 @@ func TestUpdateMemberAPI(t *testing.T) {
 
 			request.Header.Set("Content-Type", "application/json")
 
-			tc.setupAuth(t, request, server.tokenMaker)
+			tc.setupAuth(request)
 			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
 			require.NoError(t, err)
 
@@ -818,22 +868,25 @@ func TestUpdateMemberAPI(t *testing.T) {
 func TestDeleteMemberAPI(t *testing.T) {
 	t.Parallel()
 
+	session := randomSession()
 	member := randomMember()
 
 	testCases := []struct {
 		name          string
 		memberID      string
-		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
+		setupAuth     func(request *http.Request)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, response *http.Response)
 	}{
 		{
 			name:     "OK",
 			memberID: member.ID.String(),
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				store.EXPECT().
 					DeleteMember(gomock.Any(), gomock.Eq(member.ID)).
 					Times(1).
@@ -846,7 +899,7 @@ func TestDeleteMemberAPI(t *testing.T) {
 		{
 			name:     "NoAuthorization",
 			memberID: member.ID.String(),
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+			setupAuth: func(request *http.Request) {
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -860,10 +913,12 @@ func TestDeleteMemberAPI(t *testing.T) {
 		{
 			name:     "InvalidID",
 			memberID: "InvalidID",
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				store.EXPECT().
 					DeleteMember(gomock.Any(), gomock.Eq(member.ID)).
 					Times(0)
@@ -875,10 +930,12 @@ func TestDeleteMemberAPI(t *testing.T) {
 		{
 			name:     "DeleteMemberError",
 			memberID: member.ID.String(),
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				store.EXPECT().
 					DeleteMember(gomock.Any(), gomock.Eq(member.ID)).
 					Times(1).
@@ -909,7 +966,7 @@ func TestDeleteMemberAPI(t *testing.T) {
 			request, err := http.NewRequest(http.MethodDelete, url, nil)
 			require.NoError(t, err)
 
-			tc.setupAuth(t, request, server.tokenMaker)
+			tc.setupAuth(request)
 			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
 			require.NoError(t, err)
 
@@ -921,6 +978,7 @@ func TestDeleteMemberAPI(t *testing.T) {
 func TestDeleteMembersAPI(t *testing.T) {
 	t.Parallel()
 
+	session := randomSession()
 	member1 := randomMember()
 	member2 := randomMember()
 	memberIDs := []uuid.UUID{member1.ID, member2.ID}
@@ -932,7 +990,7 @@ func TestDeleteMembersAPI(t *testing.T) {
 	testCases := []struct {
 		name          string
 		query         Query
-		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
+		setupAuth     func(request *http.Request)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, response *http.Response)
 	}{
@@ -941,10 +999,12 @@ func TestDeleteMembersAPI(t *testing.T) {
 			query: Query{
 				IDs: memberIDsToCommaSeparatedString(memberIDs),
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				store.EXPECT().
 					DeleteMembers(gomock.Any(), gomock.Eq(memberIDs)).
 					Times(1).
@@ -959,7 +1019,7 @@ func TestDeleteMembersAPI(t *testing.T) {
 			query: Query{
 				IDs: memberIDsToCommaSeparatedString(memberIDs),
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+			setupAuth: func(request *http.Request) {
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -973,10 +1033,12 @@ func TestDeleteMembersAPI(t *testing.T) {
 		{
 			name:  "IDsNotFound",
 			query: Query{},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				store.EXPECT().
 					DeleteMembers(gomock.Any(), gomock.Eq(memberIDs)).
 					Times(0)
@@ -990,10 +1052,12 @@ func TestDeleteMembersAPI(t *testing.T) {
 			query: Query{
 				IDs: memberIDsToCommaSeparatedString(memberIDs) + ",InvalidID",
 			},
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-				addAccessTokenInCookie(t, request, tokenMaker, accessTokenTypeBearer, util.RandomUUID(), time.Minute)
+			setupAuth: func(request *http.Request) {
+				addSessionTokenInCookie(request, session.SessionToken.String())
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				buildValidSessionStubs(store, session)
+
 				store.EXPECT().
 					DeleteMembers(gomock.Any(), gomock.Eq(memberIDs)).
 					Times(0)
@@ -1028,7 +1092,7 @@ func TestDeleteMembersAPI(t *testing.T) {
 			q.Add("ids", tc.query.IDs)
 			request.URL.RawQuery = q.Encode()
 
-			tc.setupAuth(t, request, server.tokenMaker)
+			tc.setupAuth(request)
 			response, err := server.app.Test(request, int(time.Second.Milliseconds()))
 			require.NoError(t, err)
 

@@ -40,6 +40,16 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 	return i, err
 }
 
+const deleteSession = `-- name: DeleteSession :exec
+DELETE FROM sessions
+WHERE session_token = $1
+`
+
+func (q *Queries) DeleteSession(ctx context.Context, sessionToken uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteSession, sessionToken)
+	return err
+}
+
 const getSession = `-- name: GetSession :one
 SELECT id, user_id, session_token, expired_at FROM sessions
 WHERE session_token = $1 LIMIT 1

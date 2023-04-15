@@ -2,12 +2,12 @@ package api
 
 import (
 	"database/sql"
-	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	db "github.com/ot07/coworker-backend/db/sqlc"
+	"github.com/ot07/coworker-backend/token"
 	"github.com/ot07/coworker-backend/util"
 )
 
@@ -116,10 +116,17 @@ func (server *Server) loginUser(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnauthorized).JSON(newErrorResponse(err))
 	}
 
-	accessToken, err := server.tokenMaker.CreateToken(
-		user.ID,
-		server.config.AccessTokenDuration,
+	sessionToken := token.NewToken(
+		server.config.SessionTokenDuration,
 	)
+
+	arg := db.CreateSessionParams{
+		UserID:       user.ID,
+		SessionToken: sessionToken.ID,
+		ExpiredAt:    sessionToken.ExpiredAt,
+	}
+
+	_, err = server.store.CreateSession(c.Context(), arg)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
 	}
@@ -129,12 +136,39 @@ func (server *Server) loginUser(c *fiber.Ctx) error {
 	}
 
 	c.Cookie(&fiber.Cookie{
-		Name:     accessTokenCookieKey,
-		Value:    fmt.Sprintf("%s %s", accessTokenTypeBearer, accessToken),
+		Name:     sessionTokenKey,
+		Value:    sessionToken.ID.String(),
 		HTTPOnly: true,
 		SameSite: "none",
 		Secure:   true,
 	})
+
+	return c.Status(fiber.StatusOK).JSON(rsp)
+}
+
+type logoutUserResponse struct {
+	Message string `json:"message"`
+}
+
+// @Summary      Logout user
+// @Tags         users
+// @Success      200 {object} loginUserResponse
+// @Failure      401 {object} errorResponse
+// @Failure      500 {object} errorResponse
+// @Router       /users/logout [post]
+func (server *Server) logoutUser(c *fiber.Ctx) error {
+	sessionToken := c.Locals(sessionTokenKey).(uuid.UUID)
+
+	err := server.store.DeleteSession(c.Context(), sessionToken)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(newErrorResponse(err))
+	}
+
+	rsp := logoutUserResponse{
+		Message: "You've earned your happy hour! Cheers to a job well done!",
+	}
+
+	c.ClearCookie(sessionTokenKey)
 
 	return c.Status(fiber.StatusOK).JSON(rsp)
 }
