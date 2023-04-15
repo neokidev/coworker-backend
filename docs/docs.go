@@ -371,22 +371,11 @@ const docTemplate = `{
                     "users"
                 ],
                 "summary": "Get logged in user",
-                "parameters": [
-                    {
-                        "description": "User object",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.loginUserRequest"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.loginUserResponse"
+                            "$ref": "#/definitions/api.userResponse"
                         }
                     },
                     "401": {

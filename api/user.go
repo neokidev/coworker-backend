@@ -175,8 +175,7 @@ func (server *Server) logoutUser(c *fiber.Ctx) error {
 
 // @Summary      Get logged in user
 // @Tags         users
-// @Param        body body loginUserRequest true "User object"
-// @Success      200 {object} loginUserResponse
+// @Success      200 {object} userResponse
 // @Failure      401 {object} errorResponse
 // @Failure      404 {object} errorResponse
 // @Failure      500 {object} errorResponse

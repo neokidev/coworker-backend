@@ -346,18 +346,11 @@ paths:
       - users
   /users/me:
     get:
-      parameters:
-      - description: User object
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/api.loginUserRequest'
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.loginUserResponse'
+            $ref: '#/definitions/api.userResponse'
         "401":
           description: Unauthorized
           schema:
