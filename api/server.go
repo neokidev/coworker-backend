@@ -45,7 +45,7 @@ func (server *Server) setupRouter() {
 	v1.Use(authMiddleware(server))
 
 	v1.Post("/users/logout", server.logoutUser)
-	v1.Post("/users/me", server.getLoggedInUser)
+	v1.Get("/users/me", server.getLoggedInUser)
 
 	v1.Post("/members", server.createMember)
 	v1.Get("/members/:id", server.getMember)
