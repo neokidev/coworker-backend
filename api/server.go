@@ -18,7 +18,10 @@ type Server struct {
 // NewServer creates a new HTTP server and setup routing.
 func NewServer(config util.Config, store db.Store) (*Server, error) {
 	app := fiber.New()
-	app.Use(cors.New())
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     "http://localhost:3000",
+		AllowCredentials: true,
+	}))
 
 	server := &Server{
 		config: config,
@@ -42,6 +45,8 @@ func (server *Server) setupRouter() {
 	v1.Use(authMiddleware(server))
 
 	v1.Post("/users/logout", server.logoutUser)
+	v1.Get("/users/me", server.getLoggedInUser)
+
 	v1.Post("/members", server.createMember)
 	v1.Get("/members/:id", server.getMember)
 	v1.Get("/members", server.listMembers)

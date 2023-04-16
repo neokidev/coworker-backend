@@ -20,7 +20,8 @@ type Querier interface {
 	DeleteSession(ctx context.Context, sessionToken uuid.UUID) error
 	GetMember(ctx context.Context, id uuid.UUID) (Member, error)
 	GetSession(ctx context.Context, sessionToken uuid.UUID) (Session, error)
-	GetUser(ctx context.Context, email string) (User, error)
+	GetUser(ctx context.Context, id uuid.UUID) (User, error)
+	GetUserByEmail(ctx context.Context, email string) (User, error)
 	ListMembers(ctx context.Context, arg ListMembersParams) ([]Member, error)
 	UpdateMember(ctx context.Context, arg UpdateMemberParams) (Member, error)
 }
