@@ -23,6 +23,9 @@ type Querier interface {
 	GetUser(ctx context.Context, id uuid.UUID) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	ListMembers(ctx context.Context, arg ListMembersParams) ([]Member, error)
+	TruncateMembersTable(ctx context.Context) error
+	TruncateSessionsTable(ctx context.Context) error
+	TruncateUsersTable(ctx context.Context) error
 	UpdateMember(ctx context.Context, arg UpdateMemberParams) (Member, error)
 }
 

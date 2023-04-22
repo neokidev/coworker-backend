@@ -213,6 +213,48 @@ func (mr *MockStoreMockRecorder) ListMembers(arg0, arg1 interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListMembers", reflect.TypeOf((*MockStore)(nil).ListMembers), arg0, arg1)
 }
 
+// TruncateMembersTable mocks base method.
+func (m *MockStore) TruncateMembersTable(arg0 context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TruncateMembersTable", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// TruncateMembersTable indicates an expected call of TruncateMembersTable.
+func (mr *MockStoreMockRecorder) TruncateMembersTable(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TruncateMembersTable", reflect.TypeOf((*MockStore)(nil).TruncateMembersTable), arg0)
+}
+
+// TruncateSessionsTable mocks base method.
+func (m *MockStore) TruncateSessionsTable(arg0 context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TruncateSessionsTable", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// TruncateSessionsTable indicates an expected call of TruncateSessionsTable.
+func (mr *MockStoreMockRecorder) TruncateSessionsTable(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TruncateSessionsTable", reflect.TypeOf((*MockStore)(nil).TruncateSessionsTable), arg0)
+}
+
+// TruncateUsersTable mocks base method.
+func (m *MockStore) TruncateUsersTable(arg0 context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TruncateUsersTable", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// TruncateUsersTable indicates an expected call of TruncateUsersTable.
+func (mr *MockStoreMockRecorder) TruncateUsersTable(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TruncateUsersTable", reflect.TypeOf((*MockStore)(nil).TruncateUsersTable), arg0)
+}
+
 // UpdateMember mocks base method.
 func (m *MockStore) UpdateMember(arg0 context.Context, arg1 db.UpdateMemberParams) (db.Member, error) {
 	m.ctrl.T.Helper()

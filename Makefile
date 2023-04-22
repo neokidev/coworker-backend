@@ -37,4 +37,7 @@ mock:
 swag:
 	swag init --pd
 
+seed:
+	go run ./scripts/seed.go
+
 .PHONY: postgres createdb dropdb migrateup migratedown mmigrateup1 migratedown1 igrateforce sqlc test server mock
