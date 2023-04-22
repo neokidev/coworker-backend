@@ -66,3 +66,12 @@ func (q *Queries) GetSession(ctx context.Context, sessionToken uuid.UUID) (Sessi
 	)
 	return i, err
 }
+
+const truncateSessionsTable = `-- name: TruncateSessionsTable :exec
+TRUNCATE TABLE sessions CASCADE
+`
+
+func (q *Queries) TruncateSessionsTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, truncateSessionsTable)
+	return err
+}

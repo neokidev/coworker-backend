@@ -30,6 +30,27 @@ func setup() (context.Context, *db.SQLStore, error) {
 	return ctx, store, nil
 }
 
+func truncateAllTables(ctx context.Context, store *db.SQLStore) error {
+	fmt.Println("Truncating all tables...")
+
+	err := store.TruncateMembersTable(ctx)
+	if err != nil {
+		return fmt.Errorf("cannot truncate members table: %w", err)
+	}
+
+	err = store.TruncateSessionsTable(ctx)
+	if err != nil {
+		return fmt.Errorf("cannot truncate sessions table: %w", err)
+	}
+
+	err = store.TruncateUsersTable(ctx)
+	if err != nil {
+		return fmt.Errorf("cannot truncate users table: %w", err)
+	}
+
+	return nil
+}
+
 func runSeed(ctx context.Context, store *db.SQLStore) error {
 	fmt.Println("Creating user test data...")
 
@@ -47,6 +68,11 @@ func main() {
 	ctx, store, err := setup()
 	if err != nil {
 		log.Fatalf("failed to set up: %v", err)
+	}
+
+	err = truncateAllTables(ctx, store)
+	if err != nil {
+		log.Fatalf("failed to truncate all tables: %v", err)
 	}
 
 	err = runSeed(ctx, store)

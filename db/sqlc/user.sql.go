@@ -88,3 +88,12 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 	)
 	return i, err
 }
+
+const truncateUsersTable = `-- name: TruncateUsersTable :exec
+TRUNCATE TABLE users CASCADE
+`
+
+func (q *Queries) TruncateUsersTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, truncateUsersTable)
+	return err
+}

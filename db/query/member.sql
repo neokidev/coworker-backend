@@ -35,3 +35,6 @@ WHERE id = ANY($1::uuid[]);
 
 -- name: CountMembers :one
 SELECT count(*) FROM members;
+
+-- name: TruncateMembersTable :exec
+TRUNCATE TABLE members CASCADE;

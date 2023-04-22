@@ -137,6 +137,15 @@ func (q *Queries) ListMembers(ctx context.Context, arg ListMembersParams) ([]Mem
 	return items, nil
 }
 
+const truncateMembersTable = `-- name: TruncateMembersTable :exec
+TRUNCATE TABLE members CASCADE
+`
+
+func (q *Queries) TruncateMembersTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, truncateMembersTable)
+	return err
+}
+
 const updateMember = `-- name: UpdateMember :one
 UPDATE members
 SET
