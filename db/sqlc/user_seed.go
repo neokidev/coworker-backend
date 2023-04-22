@@ -7,7 +7,7 @@ import (
 )
 
 func CreateUserTestData(ctx context.Context, store *SQLStore) error {
-	hashedPassword, err := util.HashPassword("passwordpassword")
+	hashedPassword, err := util.HashPassword("password")
 	if err != nil {
 		return err
 	}
