@@ -279,7 +279,7 @@ func TestCreateUserAPI(t *testing.T) {
 				"first_name": user.FirstName,
 				"last_name":  user.LastName,
 				"email":      user.Email,
-				"password":   "abcdefghijklm",
+				"password":   "1234567",
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -326,7 +326,7 @@ func TestCreateUserAPI(t *testing.T) {
 }
 
 func randomUser(t *testing.T) (user db.User, password string) {
-	password = util.RandomString(14)
+	password = util.RandomString(8)
 	hashedPassword, err := util.HashPassword(password)
 	require.NoError(t, err)
 
