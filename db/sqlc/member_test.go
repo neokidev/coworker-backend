@@ -3,16 +3,16 @@ package db
 import (
 	"context"
 	"database/sql"
+	"testing"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/ot07/coworker-backend/util"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func createRandomMember(t *testing.T, testQueries *Queries) Member {
 	arg := CreateMemberParams{
-		ID:        uuid.New(),
 		FirstName: util.RandomName(),
 		LastName:  util.RandomName(),
 		Email:     sql.NullString{String: util.RandomEmail(), Valid: true},
@@ -22,11 +22,11 @@ func createRandomMember(t *testing.T, testQueries *Queries) Member {
 	require.NoError(t, err)
 	require.NotEmpty(t, member)
 
-	require.Equal(t, arg.ID, member.ID)
 	require.Equal(t, arg.FirstName, member.FirstName)
 	require.Equal(t, arg.LastName, member.LastName)
 	require.Equal(t, arg.Email, member.Email)
 
+	require.NotEmpty(t, member.ID)
 	require.NotZero(t, member.CreatedAt)
 
 	return member

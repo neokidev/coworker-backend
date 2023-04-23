@@ -26,27 +26,21 @@ func (q *Queries) CountMembers(ctx context.Context) (int64, error) {
 
 const createMember = `-- name: CreateMember :one
 INSERT INTO members (
-  id, first_name, last_name, email
+  first_name, last_name, email
 ) VALUES (
-  $1, $2, $3, $4
+  $1, $2, $3
 )
 RETURNING id, first_name, last_name, email, created_at
 `
 
 type CreateMemberParams struct {
-	ID        uuid.UUID      `json:"id"`
 	FirstName string         `json:"first_name"`
 	LastName  string         `json:"last_name"`
 	Email     sql.NullString `json:"email"`
 }
 
 func (q *Queries) CreateMember(ctx context.Context, arg CreateMemberParams) (Member, error) {
-	row := q.db.QueryRowContext(ctx, createMember,
-		arg.ID,
-		arg.FirstName,
-		arg.LastName,
-		arg.Email,
-	)
+	row := q.db.QueryRowContext(ctx, createMember, arg.FirstName, arg.LastName, arg.Email)
 	var i Member
 	err := row.Scan(
 		&i.ID,

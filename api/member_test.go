@@ -154,7 +154,6 @@ func TestCreateMemberAPI(t *testing.T) {
 	session := randomSession()
 	member := randomMember()
 	memberOnlyRequiredFields := db.Member{
-		ID:        member.ID,
 		FirstName: member.FirstName,
 		LastName:  member.LastName,
 	}
@@ -169,7 +168,6 @@ func TestCreateMemberAPI(t *testing.T) {
 		{
 			name: "OK",
 			body: fiber.Map{
-				"id":         member.ID,
 				"first_name": member.FirstName,
 				"last_name":  member.LastName,
 				"email":      member.Email.String,
@@ -181,7 +179,6 @@ func TestCreateMemberAPI(t *testing.T) {
 				buildValidSessionStubs(store, session)
 
 				arg := db.CreateMemberParams{
-					ID:        member.ID,
 					FirstName: member.FirstName,
 					LastName:  member.LastName,
 					Email:     member.Email,
@@ -200,7 +197,6 @@ func TestCreateMemberAPI(t *testing.T) {
 		{
 			name: "NoAuthorization",
 			body: fiber.Map{
-				"id":         member.ID,
 				"first_name": member.FirstName,
 				"last_name":  member.LastName,
 				"email":      member.Email.String,
@@ -219,7 +215,6 @@ func TestCreateMemberAPI(t *testing.T) {
 		{
 			name: "OptionalFieldsNotFound",
 			body: fiber.Map{
-				"id":         member.ID,
 				"first_name": member.FirstName,
 				"last_name":  member.LastName,
 			},
@@ -230,7 +225,6 @@ func TestCreateMemberAPI(t *testing.T) {
 				buildValidSessionStubs(store, session)
 
 				arg := db.CreateMemberParams{
-					ID:        member.ID,
 					FirstName: member.FirstName,
 					LastName:  member.LastName,
 				}
@@ -246,30 +240,8 @@ func TestCreateMemberAPI(t *testing.T) {
 			},
 		},
 		{
-			name: "IDNotFound",
-			body: fiber.Map{
-				"first_name": member.FirstName,
-				"last_name":  member.LastName,
-				"email":      member.Email.String,
-			},
-			setupAuth: func(request *http.Request) {
-				addSessionTokenInCookie(request, session.SessionToken.String())
-			},
-			buildStubs: func(store *mockdb.MockStore) {
-				buildValidSessionStubs(store, session)
-
-				store.EXPECT().
-					CreateMember(gomock.Any(), gomock.Any()).
-					Times(0)
-			},
-			checkResponse: func(t *testing.T, response *http.Response) {
-				require.Equal(t, http.StatusBadRequest, response.StatusCode)
-			},
-		},
-		{
 			name: "FirstNameNotFound",
 			body: fiber.Map{
-				"id":        member.ID,
 				"last_name": member.LastName,
 				"email":     member.Email.String,
 			},
@@ -290,7 +262,6 @@ func TestCreateMemberAPI(t *testing.T) {
 		{
 			name: "LastNameNotFound",
 			body: fiber.Map{
-				"id":         member.ID,
 				"first_name": member.FirstName,
 				"email":      member.Email.String,
 			},
@@ -311,7 +282,6 @@ func TestCreateMemberAPI(t *testing.T) {
 		{
 			name: "InvalidEmail",
 			body: fiber.Map{
-				"id":         member.ID,
 				"first_name": member.FirstName,
 				"last_name":  member.LastName,
 				"email":      "InvalidEmail",
@@ -333,7 +303,6 @@ func TestCreateMemberAPI(t *testing.T) {
 		{
 			name: "CreateMemberError",
 			body: fiber.Map{
-				"id":         member.ID,
 				"first_name": member.FirstName,
 				"last_name":  member.LastName,
 				"email":      member.Email.String,
@@ -345,7 +314,6 @@ func TestCreateMemberAPI(t *testing.T) {
 				buildValidSessionStubs(store, session)
 
 				arg := db.CreateMemberParams{
-					ID:        member.ID,
 					FirstName: member.FirstName,
 					LastName:  member.LastName,
 					Email:     member.Email,
@@ -1148,7 +1116,6 @@ func checkListMembersResponse(t *testing.T, body io.ReadCloser, members []db.Mem
 }
 
 func requireMemberResponseMatchMember(t *testing.T, gotMember memberResponse, member db.Member) {
-	require.Equal(t, member.ID, gotMember.ID)
 	require.Equal(t, member.FirstName, gotMember.FirstName)
 	require.Equal(t, member.LastName, gotMember.LastName)
 	require.Equal(t, member.Email.String, gotMember.Email.String)

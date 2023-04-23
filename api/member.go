@@ -12,10 +12,9 @@ import (
 )
 
 type createMemberRequest struct {
-	ID        uuid.UUID `json:"id" validate:"required" format:"uuid"`
-	FirstName string    `json:"first_name" validate:"required"`
-	LastName  string    `json:"last_name" validate:"required"`
-	Email     string    `json:"email" validate:"omitempty,email" swaggertype:"string" format:"email"`
+	FirstName string `json:"first_name" validate:"required"`
+	LastName  string `json:"last_name" validate:"required"`
+	Email     string `json:"email" validate:"omitempty,email" swaggertype:"string" format:"email"`
 }
 
 type memberResponse struct {
@@ -55,7 +54,6 @@ func (server *Server) createMember(c *fiber.Ctx) error {
 	}
 
 	arg := db.CreateMemberParams{
-		ID:        req.ID,
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
 		Email:     sql.NullString{String: req.Email, Valid: len(req.Email) > 0},
