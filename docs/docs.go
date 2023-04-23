@@ -405,7 +405,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "first_name",
-                "id",
                 "last_name"
             ],
             "properties": {
@@ -415,10 +414,6 @@ const docTemplate = `{
                 },
                 "first_name": {
                     "type": "string"
-                },
-                "id": {
-                    "type": "string",
-                    "format": "uuid"
                 },
                 "last_name": {
                     "type": "string"
@@ -445,7 +440,7 @@ const docTemplate = `{
                 },
                 "password": {
                     "type": "string",
-                    "minLength": 14
+                    "minLength": 8
                 }
             }
         },
@@ -500,7 +495,7 @@ const docTemplate = `{
                 },
                 "password": {
                     "type": "string",
-                    "minLength": 14
+                    "minLength": 8
                 }
             }
         },

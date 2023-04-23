@@ -168,7 +168,6 @@ func TestCreateMemberAPI(t *testing.T) {
 		{
 			name: "OK",
 			body: fiber.Map{
-				"id":         member.ID,
 				"first_name": member.FirstName,
 				"last_name":  member.LastName,
 				"email":      member.Email.String,
@@ -198,7 +197,6 @@ func TestCreateMemberAPI(t *testing.T) {
 		{
 			name: "NoAuthorization",
 			body: fiber.Map{
-				"id":         member.ID,
 				"first_name": member.FirstName,
 				"last_name":  member.LastName,
 				"email":      member.Email.String,
@@ -217,7 +215,6 @@ func TestCreateMemberAPI(t *testing.T) {
 		{
 			name: "OptionalFieldsNotFound",
 			body: fiber.Map{
-				"id":         member.ID,
 				"first_name": member.FirstName,
 				"last_name":  member.LastName,
 			},
@@ -243,30 +240,8 @@ func TestCreateMemberAPI(t *testing.T) {
 			},
 		},
 		{
-			name: "IDNotFound",
-			body: fiber.Map{
-				"first_name": member.FirstName,
-				"last_name":  member.LastName,
-				"email":      member.Email.String,
-			},
-			setupAuth: func(request *http.Request) {
-				addSessionTokenInCookie(request, session.SessionToken.String())
-			},
-			buildStubs: func(store *mockdb.MockStore) {
-				buildValidSessionStubs(store, session)
-
-				store.EXPECT().
-					CreateMember(gomock.Any(), gomock.Any()).
-					Times(0)
-			},
-			checkResponse: func(t *testing.T, response *http.Response) {
-				require.Equal(t, http.StatusBadRequest, response.StatusCode)
-			},
-		},
-		{
 			name: "FirstNameNotFound",
 			body: fiber.Map{
-				"id":        member.ID,
 				"last_name": member.LastName,
 				"email":     member.Email.String,
 			},
@@ -287,7 +262,6 @@ func TestCreateMemberAPI(t *testing.T) {
 		{
 			name: "LastNameNotFound",
 			body: fiber.Map{
-				"id":         member.ID,
 				"first_name": member.FirstName,
 				"email":      member.Email.String,
 			},
@@ -308,7 +282,6 @@ func TestCreateMemberAPI(t *testing.T) {
 		{
 			name: "InvalidEmail",
 			body: fiber.Map{
-				"id":         member.ID,
 				"first_name": member.FirstName,
 				"last_name":  member.LastName,
 				"email":      "InvalidEmail",
@@ -330,7 +303,6 @@ func TestCreateMemberAPI(t *testing.T) {
 		{
 			name: "CreateMemberError",
 			body: fiber.Map{
-				"id":         member.ID,
 				"first_name": member.FirstName,
 				"last_name":  member.LastName,
 				"email":      member.Email.String,

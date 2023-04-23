@@ -397,7 +397,6 @@
             "type": "object",
             "required": [
                 "first_name",
-                "id",
                 "last_name"
             ],
             "properties": {
@@ -407,10 +406,6 @@
                 },
                 "first_name": {
                     "type": "string"
-                },
-                "id": {
-                    "type": "string",
-                    "format": "uuid"
                 },
                 "last_name": {
                     "type": "string"
@@ -437,7 +432,7 @@
                 },
                 "password": {
                     "type": "string",
-                    "minLength": 14
+                    "minLength": 8
                 }
             }
         },
@@ -492,7 +487,7 @@
                 },
                 "password": {
                     "type": "string",
-                    "minLength": 14
+                    "minLength": 8
                 }
             }
         },

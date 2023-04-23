@@ -7,14 +7,10 @@ definitions:
         type: string
       first_name:
         type: string
-      id:
-        format: uuid
-        type: string
       last_name:
         type: string
     required:
     - first_name
-    - id
     - last_name
     type: object
   api.createUserRequest:
@@ -26,7 +22,7 @@ definitions:
       last_name:
         type: string
       password:
-        minLength: 14
+        minLength: 8
         type: string
     required:
     - email
@@ -64,7 +60,7 @@ definitions:
       email:
         type: string
       password:
-        minLength: 14
+        minLength: 8
         type: string
     required:
     - email
