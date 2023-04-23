@@ -1,8 +1,8 @@
 -- name: CreateMember :one
 INSERT INTO members (
-  id, first_name, last_name, email
+  first_name, last_name, email
 ) VALUES (
-  $1, $2, $3, $4
+  $1, $2, $3
 )
 RETURNING *;
 

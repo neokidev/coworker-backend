@@ -154,7 +154,6 @@ func TestCreateMemberAPI(t *testing.T) {
 	session := randomSession()
 	member := randomMember()
 	memberOnlyRequiredFields := db.Member{
-		ID:        member.ID,
 		FirstName: member.FirstName,
 		LastName:  member.LastName,
 	}
@@ -181,7 +180,6 @@ func TestCreateMemberAPI(t *testing.T) {
 				buildValidSessionStubs(store, session)
 
 				arg := db.CreateMemberParams{
-					ID:        member.ID,
 					FirstName: member.FirstName,
 					LastName:  member.LastName,
 					Email:     member.Email,
@@ -230,7 +228,6 @@ func TestCreateMemberAPI(t *testing.T) {
 				buildValidSessionStubs(store, session)
 
 				arg := db.CreateMemberParams{
-					ID:        member.ID,
 					FirstName: member.FirstName,
 					LastName:  member.LastName,
 				}
@@ -345,7 +342,6 @@ func TestCreateMemberAPI(t *testing.T) {
 				buildValidSessionStubs(store, session)
 
 				arg := db.CreateMemberParams{
-					ID:        member.ID,
 					FirstName: member.FirstName,
 					LastName:  member.LastName,
 					Email:     member.Email,
@@ -1148,7 +1144,6 @@ func checkListMembersResponse(t *testing.T, body io.ReadCloser, members []db.Mem
 }
 
 func requireMemberResponseMatchMember(t *testing.T, gotMember memberResponse, member db.Member) {
-	require.Equal(t, member.ID, gotMember.ID)
 	require.Equal(t, member.FirstName, gotMember.FirstName)
 	require.Equal(t, member.LastName, gotMember.LastName)
 	require.Equal(t, member.Email.String, gotMember.Email.String)

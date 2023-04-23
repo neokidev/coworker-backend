@@ -55,7 +55,6 @@ func (server *Server) createMember(c *fiber.Ctx) error {
 	}
 
 	arg := db.CreateMemberParams{
-		ID:        req.ID,
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
 		Email:     sql.NullString{String: req.Email, Valid: len(req.Email) > 0},
