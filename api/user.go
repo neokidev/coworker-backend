@@ -141,6 +141,7 @@ func (server *Server) loginUser(c *fiber.Ctx) error {
 		HTTPOnly: true,
 		SameSite: "none",
 		Secure:   true,
+		MaxAge:   int(server.config.SessionTokenDuration.Seconds()),
 	})
 
 	return c.Status(fiber.StatusOK).JSON(rsp)
